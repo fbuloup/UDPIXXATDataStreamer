@@ -6,15 +6,15 @@ import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.Calendar;
 
-import udpdatastreamer.DataObserver;
-import udpdatastreamer.UDPIXXATDataStreamer;
-
 import com.codamotion.system.Align;
 import com.codamotion.system.CODANETClient;
 import com.codamotion.system.CodaError;
 import com.codamotion.system.FrameData;
 import com.codamotion.system.Mode;
 import com.sun.jna.WString;
+
+import udpixxatdatastreamer.DataObserver;
+import udpixxatdatastreamer.UDPIXXATDataStreamer;
 
 /**
  * This is the main class that is responsible to run continuous acquisition

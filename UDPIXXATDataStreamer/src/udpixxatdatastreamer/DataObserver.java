@@ -1,4 +1,4 @@
-package udpdatastreamer;
+package udpixxatdatastreamer;
 
 import datastreamer.DataStreamer;
 
