@@ -366,7 +366,8 @@ public class UDPIXXATDataStreamer implements DataObserver {
 	}
 	
 	/**
-	 * Method called when new values are available. It sends these values to any UDP client.
+	 * Method called when new values are available. It sends these values to any UDP client
+	 * or to IXXAT CAN/USB bridge.
 	 * @param bytesBuffer values to send to the bridge : an array of bytes values
 	 */
 	public void update(byte[] bytesBuffer) {
