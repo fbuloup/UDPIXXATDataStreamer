@@ -394,9 +394,17 @@ public class UDPIXXATDataStreamer implements DataObserver {
 						writeMessage = n < bytesBuffer.length;
 					}
 				} else {
-					System.arraycopy(bytesBuffer, 0, message, 0, bytesBuffer.length);
-					canMessage.m_abData = message;
-					canMessageWriter.WriteMessage(canMessage);
+					if(canMessageWriter.GetFillCount() < canMessageWriter.GetCapacity()) {
+						System.arraycopy(bytesBuffer, 0, message, 0, bytesBuffer.length);
+						canMessage.m_abData = message;
+						canMessageWriter.WriteMessage(canMessage);
+					} else {
+						warningMessage = "ERROR : can message writer fifo full. Message not sent.";
+						System.out.println("Fifo buffer filled : " + canMessageWriter.GetFillCount());
+						System.out.println("Fifo buffer free : " + canMessageWriter.GetFreeCount());
+						System.out.println("Fifo capacity : " + canMessageWriter.GetCapacity());
+					}
+					
 				}
 			} catch (Throwable e) {
 				if(e instanceof UnsatisfiedLinkError) {
