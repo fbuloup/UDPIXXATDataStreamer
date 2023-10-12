@@ -4,7 +4,15 @@
 	<classpathentry kind="lib" path="libs/coda.jar"/>
 	<classpathentry kind="lib" path="libs/jna-3.5.1.jar"/>
 	<classpathentry kind="lib" path="libs/platform-3.5.1.jar"/>
-	<classpathentry kind="lib" path="libs/VciJava.jar"/>
-	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
+	<classpathentry kind="lib" path="libs/VciJava.jar">
+		<attributes>
+			<attribute name="javadoc_location" value="file:/C:/Program%20Files/IXXAT/VCI%203.5/Java/Help/"/>
+		</attributes>
+	</classpathentry>
+	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER">
+		<attributes>
+			<attribute name="module" value="true"/>
+		</attributes>
+	</classpathentry>
 	<classpathentry kind="output" path="bin"/>
 </classpath>
