@@ -37,48 +37,58 @@ public class UDPIXXATDataStreamer implements DataObserver {
 	public static String warningMessage;
 	
 	private final static String ixxatstreamerToken = "-ixxatstreamer";
-	private final static String useCodaToken = "-usecoda";
-	private final static String useXSensToken = "-usexsens";
-	private final static String useTimeStampToken = "-usetimestamp";
-	
 	private final static String udpClientIPToken = "-udpclientip";
 	private final static String udpSourcePortToken = "-udpsourceport";
 	private final static String udpDestinationPortToken = "-udpdestinationport";
-	private final static String doAlignmentToken = "-doalignment";
 	
-	private static String udpClientIP = "localhost";
-	private static int udpSourcePort = 15000;
-	private static int udpDestinationPort = Integer.MIN_VALUE;
-	
+	/*
+	 * Parameters for UPD CAN/Ethernet bridge
+	 */
+	private static String udpClientIP = "localhost"; // IP of CAN/Ethernet Bridge
+	private static int udpSourcePort = 15000; // source port of UPD (local)
+	private static int udpDestinationPort = Integer.MIN_VALUE; // destination port UPD (CAN/Ethernet Bridge)
 	private static DatagramSocket dgSocket;
 	private static InetAddress clientIP;
+	
+	private final static String useCodaToken = "-usecoda";
+	private final static String useXSensToken = "-usexsens";
+	private final static String useTimeStampToken = "-usetimestamp";
+	private final static String useOptitrackToken = "-useoptitrack";
+	
+	private final static String doAlignmentToken = "-doalignment";
 	
 	public static boolean ixxatstreamer = false;
 	public static boolean useCodamotion = false, useCodamotionSpecified = false, doAlignment = true;
 	public static boolean useXSens = false, useXSensSpecified = false;;
 	public static boolean useTimeStamp = false, useTimeStampSpecified = false;
+	public static boolean useOptitrack = false, useOptitrackSpecified = false;
 	
 	/**
 	 * Command line arguments : it may or not contain following parameters.<br><br>
-	 * For codamotion system :
 	 * <ul>
 	 * <li>-ixxatstreamer : default false. If false, will use UDP streamer. Valid values are true or false</li>
+	 * <li>-updclientip : When UDP is used : ip Of CAN/Ethernet bridge. defaut localhost</li>                
+	 * <li>-udpsourceport : When UDP is used : source port of CAN/Ethernet bridge. Default is 15000</li>        
+	 * <li>-udpdestinationport :  When UDP is used : destination port of CAN/Ethernet bridge. Default is udpsourceport</li>
+	 * </ul>
+	 * For instance :
+	 * -ixxatstreamer false -udpclientip 192.168.0.30 -udpsourceport 15000 -udpdestinationport 15001
+	 * <br><br>
+	 * For codamotion system :
+	 * <ul>
 	 * <li>-usecoda : default false. Valid values are true or false</li> 
 	 * <li>-codaserverip : default localhost. IP where CX1Server is running </li>                    
 	 * <li>-framerate : default 100. Valid values : 100, 120, 200, 400 or 800 any other values will result to 100</li>                                   
 	 * <li>-decimation : default 1</li>                                                
 	 * <li>-nbmarkers : default 1</li>                                                
 	 * <li>-firstmarkerindex : default 1</li>                                    
-	 * <li>-updclientip : defaut localhost</li>                
-	 * <li>-udpsourceport : default 15000</li>        
-	 * <li>-udpdestinationport : default udpsourceport</li>
 	 * <li>-framesNumber : default -1. Number of frames to send before stopping streaming. Specifying -1 means infinite streaming.</li>
 	 * <li>-autograb : default true. Use or not autograd frame. Do not use autograb with simulmode</li>
 	 * <li>-simulmode : default false. Use or not simulation mode (CodaServerSimulate).</li>
 	 * <li>-doalignment : default true. Do you want to do an alignment ?</li>
 	 * </ul>
 	 * For instance :
-	 * -codaServerIP 192.168.0.3 -frameRate 800 -decimation 1 -nbMarkers 1 -firstMarkerIndex 1 -udpclientip 192.168.0.30
+	 * -codaServerIP 192.168.0.3 -frameRate 800 -decimation 1 -nbMarkers 1 -firstMarkerIndex 1 
 	 * <br><br>
 	 * For gyroscope :
 	 * <ul>
@@ -97,6 +107,18 @@ public class UDPIXXATDataStreamer implements DataObserver {
 	 * </ul>
 	 * For instance :
 	 * -usetimestamp true
+	 *  <br>
+	 *  <br>
+	 * For Optitrack :
+	 * <ul>
+	 * <li>-useoptitrack : default false. Valid values are true or false</li>    
+	 * <li>-usemulticast : default false. Valid values are true or false</li>
+	 * <li>-optitracknbmarkers : default 1</li>
+	 * <li>-optitrackudpclientip : default localhost</li>
+	 * <li>-optitrackudpsourceport : default 1511</li>
+	 * </ul>
+	 * For instance :
+	 * -useoptitrack true
 	 *  <br><br>
 	 * @param params list of parameters configuration. See above.
 	 */
@@ -120,6 +142,10 @@ public class UDPIXXATDataStreamer implements DataObserver {
 				useTimeStamp = Boolean.parseBoolean(params[i+1]);
 				useTimeStampSpecified = true;
 			}
+			if(params[i].toLowerCase().equals(useOptitrackToken)) {
+				useOptitrack = Boolean.parseBoolean(params[i+1]);
+				useOptitrackSpecified = true;
+			}
 			
 			if(params[i].toLowerCase().equals(doAlignmentToken)) {
 				doAlignment = Boolean.parseBoolean(params[i+1]);
@@ -127,7 +153,7 @@ public class UDPIXXATDataStreamer implements DataObserver {
 			
 		}
 		
-		if(!useCodamotion && !useXSens && !useTimeStamp) {
+		if(!useCodamotion && !useXSens && !useTimeStamp && !useOptitrack) {
 			System.out.println("Nothing to stream ! Bye bye !");
 			return;
 		}
@@ -154,6 +180,12 @@ public class UDPIXXATDataStreamer implements DataObserver {
 				System.out.println("Do you want to use time stamp server (y/Y) ? ");
 				response = bufferedReader.readLine();
 				if(response.equalsIgnoreCase("y")) useTimeStamp = true;
+			}
+			
+			if(!useOptitrackSpecified) {
+				System.out.println("Do you want to use Optitrack (y/Y) ? ");
+				response = bufferedReader.readLine();
+				if(response.equalsIgnoreCase("y")) useOptitrack = true;
 			}
 			
 			DataStreamer dataStreamer = new DataStreamer(params);

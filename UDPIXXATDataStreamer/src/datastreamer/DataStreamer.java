@@ -3,8 +3,22 @@ package datastreamer;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.net.DatagramPacket;
+import java.net.DatagramSocket;
+import java.net.InetAddress;
+import java.net.InetSocketAddress;
+import java.net.MulticastSocket;
+import java.net.NetworkInterface;
+import java.net.SocketException;
+import java.net.SocketTimeoutException;
+import java.net.StandardSocketOptions;
+import java.net.UnknownHostException;
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.concurrent.TimeoutException;
 
 import com.codamotion.system.Align;
 import com.codamotion.system.CODANETClient;
@@ -129,7 +143,6 @@ public class DataStreamer extends Thread {
 	/*
 	 * Time stamp
 	 */
-	
 	private final static String timeStampSampleFrequencyToken = "-timestampsamplefrequency";
 
 	private static int timeStampSampleFrequency;
@@ -143,9 +156,29 @@ public class DataStreamer extends Thread {
 	private static byte timeStampSystemCode = 2;
 	
 	/*
+	 * Optitrack
+	 */
+	
+	private final static String useMulticastToken = "-usemulticast";
+	private final static String optitrackNbMarkersToken = "-optitracknbmarkers";
+	private final static String optitrackUDPServerIPToken = "-optitrackudpclientip";
+	private final static String optitrackUDPDataPortToken = "-optitrackudpdataport";
+	private final static String optitrackUDPCommandPortToken = "-optitrackudpcommandport";
+	
+	private static boolean useMulticast = true;
+	private static int optitrackNbMarkers = 1;
+	private static String optitrackUDPServerIP = "localhost";
+	private static int optitrackUDPDataPort = 1511;	
+	private static int optitrackUDPCommandPort = 1510;	
+	
+	private static byte optitrackSystemCode = 3;
+	private static byte[] optitrackBytesBuffer = new byte[7];
+	private static DatagramSocket optitrackDgSocketData;
+	private static DatagramSocket optitrackDgSocketCommand;
+	
+	/*
 	 * Other
 	 */
-
 	private static long lastTimeStampDisplay;
 	private static boolean doDisplay;
 	
@@ -165,6 +198,10 @@ public class DataStreamer extends Thread {
 		}
 		
 	}
+
+	private Thread optitrackDataThread;
+
+	private Thread optitrackCommandThread;
 	
 	/**
 	 * Command line arguments : it may or not contain following parameters.<br>
@@ -321,6 +358,109 @@ public class DataStreamer extends Thread {
 			}
 		}
 		
+		// Use Optitrack {		
+		if(UDPIXXATDataStreamer.useOptitrack) {
+			for (int i = 0; i < params.length; i++) {
+				if(params[i].toLowerCase().equals(useMulticastToken)) useMulticast = Boolean.parseBoolean(params[i+1]);
+				if(params[i].toLowerCase().equals(optitrackNbMarkersToken)) optitrackNbMarkers = Integer.parseInt(params[i+1]);
+				if(params[i].toLowerCase().equals(optitrackUDPServerIPToken)) optitrackUDPServerIP = params[i+1];
+				if(params[i].toLowerCase().equals(optitrackUDPDataPortToken)) optitrackUDPDataPort = Integer.parseInt(params[i+1]);
+				if(params[i].toLowerCase().equals(optitrackUDPCommandPortToken)) optitrackUDPCommandPort = Integer.parseInt(params[i+1]);
+			}
+			try {
+				
+				if(useMulticast) {
+					// data
+					optitrackDgSocketData = new MulticastSocket(optitrackUDPDataPort);
+					InetAddress group = InetAddress.getByName("239.255.42.99");
+					NetworkInterface networkInterface = NetworkInterface.getByInetAddress(InetAddress.getByName(optitrackUDPServerIP));
+					optitrackDgSocketData.setReuseAddress(true);
+					optitrackDgSocketData.setSoTimeout(2000);
+					optitrackDgSocketData.joinGroup(new InetSocketAddress(group, optitrackUDPDataPort), networkInterface);
+					System.out.println(optitrackDgSocketData.getBroadcast());
+					System.out.println(optitrackDgSocketData.isBound());
+					System.out.println(optitrackDgSocketData.isConnected());
+					System.out.println(optitrackDgSocketData.getInetAddress());
+					System.out.println(optitrackDgSocketData.getReceiveBufferSize());
+					// command
+		            optitrackDgSocketCommand = new MulticastSocket(optitrackUDPCommandPort);
+		            optitrackDgSocketCommand.setReuseAddress(true);
+		            optitrackDgSocketCommand.setSoTimeout(2000);
+		            optitrackDgSocketCommand.joinGroup(new InetSocketAddress(group, optitrackUDPCommandPort), networkInterface);
+					System.out.println(optitrackDgSocketCommand.getBroadcast());
+					System.out.println(optitrackDgSocketCommand.isBound());
+					System.out.println(optitrackDgSocketCommand.isConnected());
+					System.out.println(optitrackDgSocketCommand.getInetAddress());
+					System.out.println(optitrackDgSocketCommand.getReceiveBufferSize());
+					
+					Runnable optitrackDataRunnable = new Runnable() {
+						@Override
+						public void run() {
+							byte[] buffer = new byte[128*1024];
+							
+							DatagramPacket packet = new DatagramPacket(buffer, buffer.length);
+							while (!isInterrupted()) {
+								try {
+									optitrackDgSocketData.receive(packet);
+									ByteBuffer byteBuffer = ByteBuffer.wrap(packet.getData());
+									byteBuffer.order(ByteOrder.LITTLE_ENDIAN);
+									
+									short messageID = byteBuffer.getShort();
+									short packetSize = byteBuffer.getShort();
+									int frameNumber = byteBuffer.getInt();
+									System.out.println("Message ID : " + messageID + " - Packet size : " + packetSize + " - Frame number : " + frameNumber);
+									int markerSetCount = byteBuffer.getInt();
+									int dataSize = byteBuffer.getInt();
+									System.out.println("markerSetCount : " + markerSetCount + " - dataSize : " + dataSize);
+									for (int i = 0; i < markerSetCount; i++) {
+										ArrayList<Byte> markerSetNameBytes = new ArrayList<Byte>();
+										byte value = byteBuffer.get();
+										while(value != 0) {
+											markerSetNameBytes.add(value);
+											value = byteBuffer.get();
+										}
+										byte[] markerSetNameBytesPrimitive = new byte[markerSetNameBytes.size()];
+										for (int j = 0; j < markerSetNameBytesPrimitive.length; j++) markerSetNameBytesPrimitive[j] = markerSetNameBytes.get(j);
+										String markerSetNameString = new String(markerSetNameBytesPrimitive, StandardCharsets.UTF_8);
+										int markersCount = byteBuffer.getInt();
+										System.out.println("\tmarkerSet name : " + markerSetNameString + " - markers count : " + markersCount);
+										for (int j = 0; j < markersCount; j++) {
+											float posx = byteBuffer.getFloat();
+											float posy = byteBuffer.getFloat();
+											float posz = byteBuffer.getFloat();
+										}
+									}
+									
+									
+									
+									System.out.println("out");
+//									 message_id = int.from_bytes(packet[0:2], byteorder='little',  signed=True)
+									
+								} catch (IOException e) {
+									
+								}
+							}
+							System.out.println("Exit data thread");
+						}
+					};
+					optitrackDataThread = new Thread(optitrackDataRunnable);
+					Runnable optitrackCommandRunnable = new Runnable() {
+						@Override
+						public void run() {
+							while (!isInterrupted()) {
+								
+							}
+							System.out.println("Exit command thread");
+						}
+					};
+					optitrackCommandThread = new Thread(optitrackCommandRunnable);
+				}
+				
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+		}
+		
 	}
 	
 	/**
@@ -341,13 +481,14 @@ public class DataStreamer extends Thread {
 	
 	/**
 	 * This is main thread method. It is responsible for starting acquisition
-	 * and handling all data frames in order to notify any notified observer
+	 * and handling all data frames in order to notify any registered observer
 	 */
 	public void run() {
 		
 		int nbCodaMessageSent = 0;
 		int nbXsensMessageSent = 0;
 		int nbTimerMessageSent = 0;
+		int nbOptitrackMessageSent = 0;
 		
 		//int systemNumber = (UDPDataStreamer.useCodamotion?1:0) + (UDPDataStreamer.useXSens?1:0) + (UDPDataStreamer.useTimeStampSpecified?1:0);
 		
@@ -365,6 +506,11 @@ public class DataStreamer extends Thread {
 			}
 			
 			if(UDPIXXATDataStreamer.useXSens) xSens.gotoMeasurement();
+			
+			if(UDPIXXATDataStreamer.useOptitrack) {
+				optitrackDataThread.start();
+				optitrackCommandThread.start();
+			}
 			
 			t = System.nanoTime();
 			
@@ -488,6 +634,27 @@ public class DataStreamer extends Thread {
 						
 						if(!UDPIXXATDataStreamer.useCodamotion && !UDPIXXATDataStreamer.useXSens) n++;		
 					}
+					
+					if(UDPIXXATDataStreamer.useOptitrack) {
+						
+						optitrackBytesBuffer[0] = (byte) (optitrackSystemCode << 6);
+//						DatagramPacket dp = new DatagramPacket(optitrackBytesBuffer, 7);
+//						optitrackDgSocket.receive(dp);
+//						System.out.println(dp.getData());
+						
+						
+						
+						
+						updateObservers(optitrackBytesBuffer);
+						nbOptitrackMessageSent++;
+						
+						if(doDisplay) {
+							
+						}
+						
+						if(!UDPIXXATDataStreamer.useCodamotion && !UDPIXXATDataStreamer.useXSens && !UDPIXXATDataStreamer.useTimeStamp) n++;	
+					}
+					
 					//if(display) System.out.println("Total messages sent : " + (nbTimerMessageSent + nbXsensMessageSent + nbCodaMessageSent));
 					//n = n - systemNumber + 2;
 					
@@ -519,11 +686,19 @@ public class DataStreamer extends Thread {
 				xSens.freeAllocatedMemory();
 			}
 			
+			if(UDPIXXATDataStreamer.useOptitrack) {
+				optitrackCommandThread.interrupt();
+				optitrackDataThread.interrupt();
+				while(optitrackCommandThread.isAlive() && optitrackCommandThread.isAlive());
+				optitrackDgSocketData.close();
+				optitrackDgSocketCommand.close();
+			}
 			
 			System.out.println("Nb Coda messages sent : " + nbCodaMessageSent);
 			System.out.println("Nb XSens messages sent : " + nbXsensMessageSent);
 			System.out.println("Nb Timer messages sent : " + nbTimerMessageSent);
-			System.out.println("Total messages sent : " + (nbTimerMessageSent + nbXsensMessageSent + nbCodaMessageSent));
+			System.out.println("Nb Optitrack messages sent : " + nbOptitrackMessageSent);
+			System.out.println("Total messages sent : " + (nbTimerMessageSent + nbXsensMessageSent + nbCodaMessageSent + nbOptitrackMessageSent));
 			
 			System.out.println("Duration (s) : " + t/1000000000.0);
 			System.out.println("Nb grabbed frames : " + n);
@@ -577,7 +752,8 @@ public class DataStreamer extends Thread {
 			}
 			System.out.println("Nb Coda messages sent : " + nbCodaMessageSent);
 			System.out.println("Nb XSens messages sent : " + nbXsensMessageSent);
-			System.out.println("Nb Timer messages sent : " + nbTimerMessageSent);						
+			System.out.println("Nb Timer messages sent : " + nbTimerMessageSent);	
+			System.out.println("Nb Optitrack messages sent : " + nbOptitrackMessageSent);					
 			System.out.println("Press ENTER to exit...");
 		} catch (Exception e) {
 			if(UDPIXXATDataStreamer.useXSens) {
@@ -602,6 +778,7 @@ public class DataStreamer extends Thread {
 				System.out.println("Nb Coda messages sent : " + nbCodaMessageSent);
 				System.out.println("Nb XSens messages sent : " + nbXsensMessageSent);
 				System.out.println("Nb Timer messages sent : " + nbTimerMessageSent);
+				System.out.println("Nb Optitrack messages sent : " + nbOptitrackMessageSent);
 				System.out.println("Press ENTER to exit...");
 			}
 		}
