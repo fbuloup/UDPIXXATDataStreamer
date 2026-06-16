@@ -9,16 +9,12 @@ import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.MulticastSocket;
 import java.net.NetworkInterface;
-import java.net.SocketException;
 import java.net.SocketTimeoutException;
-import java.net.StandardSocketOptions;
-import java.net.UnknownHostException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Calendar;
-import java.util.concurrent.TimeoutException;
 
 import com.codamotion.system.Align;
 import com.codamotion.system.CODANETClient;
@@ -27,6 +23,7 @@ import com.codamotion.system.FrameData;
 import com.codamotion.system.Mode;
 import com.sun.jna.WString;
 
+import optitrack.OptitrackData;
 import udpixxatdatastreamer.DataObserver;
 import udpixxatdatastreamer.UDPIXXATDataStreamer;
 
@@ -104,10 +101,6 @@ public class DataStreamer extends Thread {
 	private static int[] framesIDs;
 	private static long[] framesTimes;
 	
-	private static short codaXValue;
-	private static short codaYValue ;
-	private static short codaZValue ;
-	
 	private static byte[] codaBytesBuffer = new byte[8];
 	
 	private static ArrayList<DataObserver> observers = new ArrayList<DataObserver>(0);
@@ -159,28 +152,41 @@ public class DataStreamer extends Thread {
 	 * Optitrack
 	 */
 	
+	private final static int NAT_FRAMEOFDATA = 7;
+	
 	private final static String useMulticastToken = "-usemulticast";
-	private final static String optitrackNbMarkersToken = "-optitracknbmarkers";
+	private final static String optitrackNbUnlabeledMarkersToken = "-optitracknbunlabeledmarkers";
 	private final static String optitrackUDPServerIPToken = "-optitrackudpclientip";
 	private final static String optitrackUDPDataPortToken = "-optitrackudpdataport";
 	private final static String optitrackUDPCommandPortToken = "-optitrackudpcommandport";
+	private final static String optitrackfirstMarkerIndexToken = "-optitrackfirstmarkerindex";
+	private final static String multicastIPToken = "multicastip";
 	
 	private static boolean useMulticast = true;
-	private static int optitrackNbMarkers = 1;
+	private static int optitrackNbUnlabeledMarkers = 0;
 	private static String optitrackUDPServerIP = "localhost";
 	private static int optitrackUDPDataPort = 1511;	
 	private static int optitrackUDPCommandPort = 1510;	
+	private static int optitrackFirstMarkerIndex = 0;
+	private static String multicastIP = "239.255.42.99";
 	
-	private static byte optitrackSystemCode = 3;
+	
+	private static byte optitrackSystemCode = 0;
 	private static byte[] optitrackBytesBuffer = new byte[7];
 	private static DatagramSocket optitrackDgSocketData;
 	private static DatagramSocket optitrackDgSocketCommand;
+	private static byte[] optitrackReceiveBytesBuffer = new byte[128*1024];
+	private DatagramPacket optitrackDatagramPacket;
 	
 	/*
 	 * Other
 	 */
 	private static long lastTimeStampDisplay;
 	private static boolean doDisplay;
+	
+	private static short xValue;
+	private static short yValue ;
+	private static short zValue ;
 	
 	/**
 	 * See {@link UDPIXXATDataStreamer#main(String[])} for details.
@@ -199,9 +205,11 @@ public class DataStreamer extends Thread {
 		
 	}
 
-	private Thread optitrackDataThread;
+//	private Thread optitrackDataThread;
+//
+//	private Thread optitrackCommandThread;
 
-	private Thread optitrackCommandThread;
+	
 	
 	/**
 	 * Command line arguments : it may or not contain following parameters.<br>
@@ -236,6 +244,19 @@ public class DataStreamer extends Thread {
 	 * </ul>
 	 * For instance :
 	 * -usetimestamp true -timestampsamplefrequency 100
+	 *  <br><br>
+	 * For Optitrack :
+	 * <ul>
+	 * <li>-usemulticast : default true. Valid values are true or false</li>
+	 * <li>-optitracknbunlabeledmarkers : default 1</li>
+	 * <li>-optitrackfirstmarkerindex : default 0</li>
+	 * <li>-optitrackudpclientip : default localhost</li>
+	 * <li>-optitrackudpsourceport : default 1511</li>
+	 * <li>-multicastip : default 239.255.42.99</li>
+	 * multicastIPToken
+	 * </ul>
+	 * For instance :
+	 * -useoptitrack true -usemulticast true -optitracknbunlabeledmarkers 3 -optitrackfirstmarkerindex 4
 	 *  <br><br>
 	 * @param params list of parameters configuration. See above.
 	 */
@@ -362,103 +383,14 @@ public class DataStreamer extends Thread {
 		if(UDPIXXATDataStreamer.useOptitrack) {
 			for (int i = 0; i < params.length; i++) {
 				if(params[i].toLowerCase().equals(useMulticastToken)) useMulticast = Boolean.parseBoolean(params[i+1]);
-				if(params[i].toLowerCase().equals(optitrackNbMarkersToken)) optitrackNbMarkers = Integer.parseInt(params[i+1]);
+				if(params[i].toLowerCase().equals(optitrackNbUnlabeledMarkersToken)) optitrackNbUnlabeledMarkers = Integer.parseInt(params[i+1]);
 				if(params[i].toLowerCase().equals(optitrackUDPServerIPToken)) optitrackUDPServerIP = params[i+1];
 				if(params[i].toLowerCase().equals(optitrackUDPDataPortToken)) optitrackUDPDataPort = Integer.parseInt(params[i+1]);
 				if(params[i].toLowerCase().equals(optitrackUDPCommandPortToken)) optitrackUDPCommandPort = Integer.parseInt(params[i+1]);
+				if(params[i].toLowerCase().equals(optitrackfirstMarkerIndexToken)) optitrackFirstMarkerIndex = Integer.parseInt(params[i+1]);
+				if(params[i].toLowerCase().equals(multicastIPToken)) multicastIP = params[i+1];
 			}
-			try {
-				
-				if(useMulticast) {
-					// data
-					optitrackDgSocketData = new MulticastSocket(optitrackUDPDataPort);
-					InetAddress group = InetAddress.getByName("239.255.42.99");
-					NetworkInterface networkInterface = NetworkInterface.getByInetAddress(InetAddress.getByName(optitrackUDPServerIP));
-					optitrackDgSocketData.setReuseAddress(true);
-					optitrackDgSocketData.setSoTimeout(2000);
-					optitrackDgSocketData.joinGroup(new InetSocketAddress(group, optitrackUDPDataPort), networkInterface);
-					System.out.println(optitrackDgSocketData.getBroadcast());
-					System.out.println(optitrackDgSocketData.isBound());
-					System.out.println(optitrackDgSocketData.isConnected());
-					System.out.println(optitrackDgSocketData.getInetAddress());
-					System.out.println(optitrackDgSocketData.getReceiveBufferSize());
-					// command
-		            optitrackDgSocketCommand = new MulticastSocket(optitrackUDPCommandPort);
-		            optitrackDgSocketCommand.setReuseAddress(true);
-		            optitrackDgSocketCommand.setSoTimeout(2000);
-		            optitrackDgSocketCommand.joinGroup(new InetSocketAddress(group, optitrackUDPCommandPort), networkInterface);
-					System.out.println(optitrackDgSocketCommand.getBroadcast());
-					System.out.println(optitrackDgSocketCommand.isBound());
-					System.out.println(optitrackDgSocketCommand.isConnected());
-					System.out.println(optitrackDgSocketCommand.getInetAddress());
-					System.out.println(optitrackDgSocketCommand.getReceiveBufferSize());
-					
-					Runnable optitrackDataRunnable = new Runnable() {
-						@Override
-						public void run() {
-							byte[] buffer = new byte[128*1024];
-							
-							DatagramPacket packet = new DatagramPacket(buffer, buffer.length);
-							while (!isInterrupted()) {
-								try {
-									optitrackDgSocketData.receive(packet);
-									ByteBuffer byteBuffer = ByteBuffer.wrap(packet.getData());
-									byteBuffer.order(ByteOrder.LITTLE_ENDIAN);
-									
-									short messageID = byteBuffer.getShort();
-									short packetSize = byteBuffer.getShort();
-									int frameNumber = byteBuffer.getInt();
-									System.out.println("Message ID : " + messageID + " - Packet size : " + packetSize + " - Frame number : " + frameNumber);
-									int markerSetCount = byteBuffer.getInt();
-									int dataSize = byteBuffer.getInt();
-									System.out.println("markerSetCount : " + markerSetCount + " - dataSize : " + dataSize);
-									for (int i = 0; i < markerSetCount; i++) {
-										ArrayList<Byte> markerSetNameBytes = new ArrayList<Byte>();
-										byte value = byteBuffer.get();
-										while(value != 0) {
-											markerSetNameBytes.add(value);
-											value = byteBuffer.get();
-										}
-										byte[] markerSetNameBytesPrimitive = new byte[markerSetNameBytes.size()];
-										for (int j = 0; j < markerSetNameBytesPrimitive.length; j++) markerSetNameBytesPrimitive[j] = markerSetNameBytes.get(j);
-										String markerSetNameString = new String(markerSetNameBytesPrimitive, StandardCharsets.UTF_8);
-										int markersCount = byteBuffer.getInt();
-										System.out.println("\tmarkerSet name : " + markerSetNameString + " - markers count : " + markersCount);
-										for (int j = 0; j < markersCount; j++) {
-											float posx = byteBuffer.getFloat();
-											float posy = byteBuffer.getFloat();
-											float posz = byteBuffer.getFloat();
-										}
-									}
-									
-									
-									
-									System.out.println("out");
-//									 message_id = int.from_bytes(packet[0:2], byteorder='little',  signed=True)
-									
-								} catch (IOException e) {
-									
-								}
-							}
-							System.out.println("Exit data thread");
-						}
-					};
-					optitrackDataThread = new Thread(optitrackDataRunnable);
-					Runnable optitrackCommandRunnable = new Runnable() {
-						@Override
-						public void run() {
-							while (!isInterrupted()) {
-								
-							}
-							System.out.println("Exit command thread");
-						}
-					};
-					optitrackCommandThread = new Thread(optitrackCommandRunnable);
-				}
-				
-			} catch (IOException e) {
-				e.printStackTrace();
-			}
+			optitrackBytesBuffer = new byte[8*optitrackNbUnlabeledMarkers];
 		}
 		
 	}
@@ -507,9 +439,28 @@ public class DataStreamer extends Thread {
 			
 			if(UDPIXXATDataStreamer.useXSens) xSens.gotoMeasurement();
 			
-			if(UDPIXXATDataStreamer.useOptitrack) {
-				optitrackDataThread.start();
-				optitrackCommandThread.start();
+			if(UDPIXXATDataStreamer.useOptitrack && useMulticast) {
+//				optitrackDataThread.start();
+//				optitrackCommandThread.start();
+				// data
+				optitrackDgSocketData = new MulticastSocket(optitrackUDPDataPort);
+				InetAddress group = InetAddress.getByName("239.255.42.99");
+				NetworkInterface networkInterface = NetworkInterface.getByInetAddress(InetAddress.getByName(optitrackUDPServerIP));
+				optitrackDgSocketData.setReuseAddress(true);
+				optitrackDgSocketData.setSoTimeout(100);
+				optitrackDgSocketData.joinGroup(new InetSocketAddress(group, optitrackUDPDataPort), networkInterface);
+				// command
+	            optitrackDgSocketCommand = new MulticastSocket(optitrackUDPCommandPort);
+	            optitrackDgSocketCommand.setReuseAddress(true);
+	            optitrackDgSocketCommand.setSoTimeout(2000);
+	            optitrackDgSocketCommand.joinGroup(new InetSocketAddress(group, optitrackUDPCommandPort), networkInterface);
+				System.out.println("Using optitrack on multicast : " + useMulticast);
+				if(useMulticast) System.out.println("Multicast IP : " + multicastIP);
+				System.out.println("Nb unlabeled markers to find : " + optitrackNbUnlabeledMarkers);
+				System.out.println("Optitrack First Marker Index : " + optitrackFirstMarkerIndex);
+				optitrackReceiveBytesBuffer = new byte[128*1024];
+				optitrackDatagramPacket = new DatagramPacket(optitrackReceiveBytesBuffer, optitrackReceiveBytesBuffer.length);
+				OptitrackData.initMarkers(optitrackNbUnlabeledMarkers);
 			}
 			
 			t = System.nanoTime();
@@ -545,9 +496,9 @@ public class DataStreamer extends Thread {
 							}
 							
 							for (int j = 0; j < nbMarkers; j++) {
-								codaXValue = (short) (10*codaValues[3*j]);
-								codaYValue = (short) (10*codaValues[3*j + 1]);
-								codaZValue = (short) (10*codaValues[3*j + 2]);
+								xValue = (short) (10*codaValues[3*j]);
+								yValue = (short) (10*codaValues[3*j + 1]);
+								zValue = (short) (10*codaValues[3*j + 2]);
 								
 								if(codaVisibilities[j] == 0) {
 									System.out.println("Marker " + (j + 1) + " invisible at frame ID " + frameID);
@@ -555,23 +506,23 @@ public class DataStreamer extends Thread {
 								
 								codaBytesBuffer[0 + 8*j] = (byte) ( (codaSystemCode << 6) | ((codaVisibilities[j] == 0) ? (byte)(j+1) : (byte)((j+1) | 0x20)) );
 								codaBytesBuffer[1 + 8*j] = frameID;
-								codaBytesBuffer[2 + 8*j] = (byte) (codaXValue >> 8);
-								codaBytesBuffer[3 + 8*j] = (byte) (codaXValue & 0xFF);
-								codaBytesBuffer[4 + 8*j] = (byte) (codaYValue >> 8);
-								codaBytesBuffer[5 + 8*j] = (byte) (codaYValue & 0xFF);
-								codaBytesBuffer[6 + 8*j] = (byte) (codaZValue >> 8);
-								codaBytesBuffer[7 + 8*j] = (byte) (codaZValue & 0xFF);
+								codaBytesBuffer[2 + 8*j] = (byte) (xValue >> 8);
+								codaBytesBuffer[3 + 8*j] = (byte) (xValue & 0xFF);
+								codaBytesBuffer[4 + 8*j] = (byte) (yValue >> 8);
+								codaBytesBuffer[5 + 8*j] = (byte) (yValue & 0xFF);
+								codaBytesBuffer[6 + 8*j] = (byte) (zValue >> 8);
+								codaBytesBuffer[7 + 8*j] = (byte) (zValue & 0xFF);
 								
 							}
 							
 							if(doDisplay) {
 								for (int j = 0; j < nbMarkers; j++) {
-									codaXValue = (short) (10*codaValues[3*j]);
-									codaYValue = (short) (10*codaValues[3*j + 1]);
-									codaZValue = (short) (10*codaValues[3*j + 2]);
-									System.out.println("Marker " + (j + firstMarkerIndex) + " xValue : " + codaXValue);
-									System.out.println("Marker " + (j + firstMarkerIndex) + " yValue : " + codaYValue);
-									System.out.println("Marker " + (j + firstMarkerIndex) + " zValue : " + codaZValue);
+									xValue = (short) (10*codaValues[3*j]);
+									yValue = (short) (10*codaValues[3*j + 1]);
+									zValue = (short) (10*codaValues[3*j + 2]);
+									System.out.println("Marker " + (j + firstMarkerIndex) + " xValue : " + xValue);
+									System.out.println("Marker " + (j + firstMarkerIndex) + " yValue : " + yValue);
+									System.out.println("Marker " + (j + firstMarkerIndex) + " zValue : " + zValue);
 								}
 							}
 							
@@ -636,27 +587,68 @@ public class DataStreamer extends Thread {
 					}
 					
 					if(UDPIXXATDataStreamer.useOptitrack) {
-						
-						optitrackBytesBuffer[0] = (byte) (optitrackSystemCode << 6);
-//						DatagramPacket dp = new DatagramPacket(optitrackBytesBuffer, 7);
-//						optitrackDgSocket.receive(dp);
-//						System.out.println(dp.getData());
-						
-						
-						
-						
-						updateObservers(optitrackBytesBuffer);
-						nbOptitrackMessageSent++;
-						
-						if(doDisplay) {
+						try {
+							optitrackDgSocketData.receive(optitrackDatagramPacket);
 							
+							ByteBuffer byteBuffer = ByteBuffer.wrap(optitrackDatagramPacket.getData());
+							byteBuffer.order(ByteOrder.LITTLE_ENDIAN);
+							// Message id and packet size
+							short messageID = byteBuffer.getShort();
+							short packetSize = byteBuffer.getShort();
+							if(messageID == NAT_FRAMEOFDATA && packetSize > 0) {
+								processOptitrackDataFrame(byteBuffer, false);
+								
+								if(OptitrackData.frameID != OptitrackData.lastFrameID) {
+									
+									frameID += (OptitrackData.frameID - OptitrackData.lastFrameID);
+									
+									OptitrackData.lastFrameID = OptitrackData.frameID;
+									
+									for(int j = 0; j < optitrackNbUnlabeledMarkers; j++) {
+										xValue = (short) (1000*OptitrackData.unlabeledMarkers[j].x);
+										yValue = (short) (1000*OptitrackData.unlabeledMarkers[j].y);
+										zValue = (short) (1000*OptitrackData.unlabeledMarkers[j].z);
+										
+										if(OptitrackData.unlabeledMarkers[j].visibility == 0) {
+											System.out.println("Optitrack Marker " + (j + 1) + " invisible at frame ID " + frameID);
+										}
+										
+										optitrackBytesBuffer[0 + 8*j] = (byte) ( (optitrackSystemCode << 6) | ((OptitrackData.unlabeledMarkers[j].visibility == 0) ? (byte)(j+1) : (byte)((j+1) | 0x20)) );
+										optitrackBytesBuffer[1 + 8*j] = frameID;
+										optitrackBytesBuffer[2 + 8*j] = (byte) (xValue >> 8);
+										optitrackBytesBuffer[3 + 8*j] = (byte) (xValue & 0xFF);
+										optitrackBytesBuffer[4 + 8*j] = (byte) (yValue >> 8);
+										optitrackBytesBuffer[5 + 8*j] = (byte) (yValue & 0xFF);
+										optitrackBytesBuffer[6 + 8*j] = (byte) (zValue >> 8);
+										optitrackBytesBuffer[7 + 8*j] = (byte) (zValue & 0xFF);
+									}
+									
+									updateObservers(optitrackBytesBuffer);
+									nbOptitrackMessageSent++;
+									
+									if(doDisplay) {
+										for (int j = 0; j < optitrackNbUnlabeledMarkers; j++) {
+											xValue = (short) (1000*OptitrackData.unlabeledMarkers[j].x);
+											yValue = (short) (1000*OptitrackData.unlabeledMarkers[j].y);
+											zValue = (short) (1000*OptitrackData.unlabeledMarkers[j].z);
+											System.out.println("Optitrack Marker " + (j + optitrackFirstMarkerIndex) + " xValue (mm) : " + xValue);
+											System.out.println("Optitrack Marker " + (j + optitrackFirstMarkerIndex) + " yValue (mm) : " + yValue);
+											System.out.println("Optitrack Marker " + (j + optitrackFirstMarkerIndex) + " zValue (mm) : " + zValue);
+										}
+									}
+									
+								}
+								
+								
+							}
+							
+							if(!UDPIXXATDataStreamer.useCodamotion && !UDPIXXATDataStreamer.useXSens && !UDPIXXATDataStreamer.useTimeStamp) n++;
+							
+						} catch (SocketTimeoutException e) {
+							System.err.println("Time out on optitrack connection !");
 						}
-						
-						if(!UDPIXXATDataStreamer.useCodamotion && !UDPIXXATDataStreamer.useXSens && !UDPIXXATDataStreamer.useTimeStamp) n++;	
+							
 					}
-					
-					//if(display) System.out.println("Total messages sent : " + (nbTimerMessageSent + nbXsensMessageSent + nbCodaMessageSent));
-					//n = n - systemNumber + 2;
 					
 				}
 				
@@ -687,9 +679,6 @@ public class DataStreamer extends Thread {
 			}
 			
 			if(UDPIXXATDataStreamer.useOptitrack) {
-				optitrackCommandThread.interrupt();
-				optitrackDataThread.interrupt();
-				while(optitrackCommandThread.isAlive() && optitrackCommandThread.isAlive());
 				optitrackDgSocketData.close();
 				optitrackDgSocketCommand.close();
 			}
@@ -783,6 +772,229 @@ public class DataStreamer extends Thread {
 			}
 		}
 		
+	}
+
+	private void processOptitrackDataFrame(ByteBuffer byteBuffer, boolean systemLog) {
+
+		if(systemLog) System.out.println(">>>> Begin frame");
+		// Frame number
+		int frameNumber = byteBuffer.getInt();
+		OptitrackData.frameID = frameNumber;
+		
+		if(systemLog) System.out.println("Frame number : " + frameNumber);
+		// Marker set and data size
+		int markerSetCount = byteBuffer.getInt();
+		int dataSize = byteBuffer.getInt();
+		if(systemLog) System.out.println("markerSetCount : " + markerSetCount + " - dataSize : " + dataSize);
+		// For all marker set data
+		for (int i = 0; i < markerSetCount; i++) {
+			// Read market set name to string
+			ArrayList<Byte> markerSetNameBytes = new ArrayList<Byte>();
+			byte value = byteBuffer.get();
+			while(value != 0) {
+				markerSetNameBytes.add(value);
+				value = byteBuffer.get();
+			}
+			byte[] markerSetNameBytesPrimitive = new byte[markerSetNameBytes.size()];
+			for (int j = 0; j < markerSetNameBytesPrimitive.length; j++) markerSetNameBytesPrimitive[j] = markerSetNameBytes.get(j);
+			String markerSetNameString = new String(markerSetNameBytesPrimitive, StandardCharsets.UTF_8);
+			int markersCount = byteBuffer.getInt();
+			if(systemLog) System.out.println("\tmarkerSet name : " + markerSetNameString + " - markers count : " + markersCount);
+			// for all markers in marker set
+			for (int j = 0; j < markersCount; j++) {
+				// Read 3D position
+				float posx = byteBuffer.getFloat();
+				float posy = byteBuffer.getFloat();
+				float posz = byteBuffer.getFloat();
+				if(systemLog) System.out.println("\t\tmarker " + j + " - x :" + posx + " - y : " + posy + " - z : " + posz);
+			}
+		}
+		// !!!!!!!!!!!!!!!! Get legacy other markers data : this is unlabeled markers we are looking for !!!!!!!!!!!!!!!!
+		int otherMarkersCount = byteBuffer.getInt();
+		dataSize = byteBuffer.getInt();
+		if(systemLog) System.out.println("otherMarkersCount : " + otherMarkersCount + " - dataSize : " + dataSize);
+		// for all markers in marker set
+		int n = 0;
+		for (int i = 0; i < otherMarkersCount; i++) {
+			// Read 3D position
+			float posx = byteBuffer.getFloat();
+			float posy = byteBuffer.getFloat();
+			float posz = byteBuffer.getFloat();
+			if(systemLog) System.out.println("\tmarker " + i + " - x :" + posx + " - y : " + posy + " - z : " + posz);
+			if(i >= optitrackFirstMarkerIndex && i <=  optitrackFirstMarkerIndex + optitrackNbUnlabeledMarkers - 1) {
+				OptitrackData.unlabeledMarkers[n].x = posx;
+				OptitrackData.unlabeledMarkers[n].y = posy;
+				OptitrackData.unlabeledMarkers[n].z = posz;
+				n++;
+			}
+		}
+		// Get rigid body data
+		int rigidBodyCount = byteBuffer.getInt();
+		dataSize = byteBuffer.getInt();
+		if(systemLog) System.out.println("rigidBodyCount : " + rigidBodyCount + " - dataSize : " + dataSize);
+		for (int i = 0; i < rigidBodyCount; i++) {
+			// Rigid body for native version 3 and above
+			int rigidBodyID = byteBuffer.getInt();
+			float posx = byteBuffer.getFloat();
+			float posy = byteBuffer.getFloat();
+			float posz = byteBuffer.getFloat();
+			float q1 = byteBuffer.getFloat();
+			float q2 = byteBuffer.getFloat();
+			float q3 = byteBuffer.getFloat();
+			float q4 = byteBuffer.getFloat();
+			if(systemLog) {
+				System.out.println("\trigidBody num : " + i + " - ID : " + rigidBodyID);
+				System.out.println("\tx :" + posx + " - y : " + posy + " - z : " + posz);
+				System.out.println("\tq1 :" + q1 + " - q2 : " + q2 + " - q3 : " + q3 + " - q4 : " + q4);
+			}
+			float markerError = byteBuffer.getFloat();
+			short tarckingValid = byteBuffer.getShort();
+			tarckingValid = (short) (tarckingValid & 0x01);
+			if(systemLog) {
+				System.out.println("\tMean Marker Error :" + markerError);
+				System.out.println("\ttarckingValid :" + tarckingValid);
+			}
+		}
+		// Get Skeleton data
+		int skeletonCount = byteBuffer.getInt();
+		dataSize = byteBuffer.getInt();
+		if(systemLog) System.out.println("skeletonCount : " + skeletonCount + " - dataSize : " + dataSize);
+		for (int i = 0; i < skeletonCount; i++) {
+			int skeletonID = byteBuffer.getInt();
+			rigidBodyCount = byteBuffer.getInt();
+			if(systemLog) System.out.println("\tskeletonID : " + skeletonID + "rigidBodyCount : " + rigidBodyCount);
+			for(int j = 0; j < rigidBodyCount; j++) {
+				// Rigid body for native version 3 and above
+				int rigidBodyID = byteBuffer.getInt();
+				float posx = byteBuffer.getFloat();
+				float posy = byteBuffer.getFloat();
+				float posz = byteBuffer.getFloat();
+				float q1 = byteBuffer.getFloat();
+				float q2 = byteBuffer.getFloat();
+				float q3 = byteBuffer.getFloat();
+				float q4 = byteBuffer.getFloat();
+				if(systemLog) {
+					System.out.println("\t\trigidBody num : " + j + " - ID : " + rigidBodyID);
+					System.out.println("\t\tx :" + posx + " - y : " + posy + " - z : " + posz);
+					System.out.println("\t\tq1 :" + q1 + " - q2 : " + q2 + " - q3 : " + q3 + " - q4 : " + q4);
+				}
+				float markerError = byteBuffer.getFloat();
+				short tarckingValid = byteBuffer.getShort();
+				tarckingValid = (short) (tarckingValid & 0x01);
+				if(systemLog) {
+					System.out.println("\t\tMean Marker Error :" + markerError);
+					System.out.println("\t\ttarckingValid :" + tarckingValid);
+				}
+			}
+		}
+		// Get asset Data
+		int assetCount = byteBuffer.getInt();
+		dataSize = byteBuffer.getInt();
+		if(systemLog) System.out.println("assetCount : " + assetCount + " - dataSize : " + dataSize);
+		for (int i = 0; i < assetCount; i++) {
+			int assetID = byteBuffer.getInt();
+			rigidBodyCount = byteBuffer.getInt();
+			if(systemLog) System.out.println("\tassetID : " + assetID + "rigidBodyCount : " + rigidBodyCount);
+			for(int j = 0; j < rigidBodyCount; j++) {
+				int rigidBodyID = byteBuffer.getInt();
+				float posx = byteBuffer.getFloat();
+				float posy = byteBuffer.getFloat();
+				float posz = byteBuffer.getFloat();
+				float q1 = byteBuffer.getFloat();
+				float q2 = byteBuffer.getFloat();
+				float q3 = byteBuffer.getFloat();
+				float q4 = byteBuffer.getFloat();
+				if(systemLog) {
+					System.out.println("\t\trigidBody num : " + j + " - ID : " + rigidBodyID);
+					System.out.println("\t\tx :" + posx + " - y : " + posy + " - z : " + posz);
+					System.out.println("\t\tq1 :" + q1 + " - q2 : " + q2 + " - q3 : " + q3 + " - q4 : " + q4);
+				}
+				float meanError = byteBuffer.getFloat();
+				short params = byteBuffer.getShort();
+				if(systemLog) {
+					System.out.println("\t\tMean Marker Error :" + meanError);
+					System.out.println("\t\tparams :" + params);
+				}
+			}
+		}
+		// Get labeled markers data
+		int labeledMarkersCount = byteBuffer.getInt();
+		dataSize = byteBuffer.getInt();
+		if(systemLog) System.out.println("labeledMarkersCount : " + labeledMarkersCount + " - dataSize : " + dataSize);
+		for (int i = 0; i < labeledMarkersCount; i++) {
+			int tempID = byteBuffer.getInt();
+	        int modelID = tempID >> 16;
+	        int markerID = tempID & 0x0000ffff;
+	        float posx = byteBuffer.getFloat();
+			float posy = byteBuffer.getFloat();
+			float posz = byteBuffer.getFloat();
+			float size = byteBuffer.getFloat();
+			if(systemLog) {
+				System.out.println("\tlabeled marker num : " + i + " - marker ID : " + markerID+ " - modle ID : " + modelID);
+				System.out.println("\tx :" + posx + " - y : " + posy + " - z : " + posz);
+				System.out.println("\tsize :" + size);
+			}
+			short params = byteBuffer.getShort();
+			boolean occluded = (params & 0x01) != 0;
+            boolean point_cloud_solved = (params & 0x02) != 0;
+            boolean model_solved = (params & 0x04) != 0;
+			float residual = byteBuffer.getFloat();
+			if(systemLog) {
+				System.out.println("\toccluded :" + occluded + " - point_cloud_solved : " + point_cloud_solved + " - model_solved : " + model_solved);
+				System.out.println("\tresidual :" + residual);
+			}
+		}
+		// Get force plate data
+		int forcePlateCount = byteBuffer.getInt();
+		dataSize = byteBuffer.getInt();
+		if(systemLog) System.out.println("forcePlateCount : " + forcePlateCount + " - dataSize : " + dataSize);
+		for (int i = 0; i < forcePlateCount; i++) {
+			int forcePlateID = byteBuffer.getInt();
+			int forcePlateChannelsCount = byteBuffer.getInt();
+			if(systemLog) System.out.println("\tforcePlateID : " + forcePlateID + " - forcePlateChannelsCount : " + forcePlateChannelsCount);
+			for(int j = 0; j < forcePlateChannelsCount; j++) {
+				int forcePlateChannelFramesCount = byteBuffer.getInt();
+				if(systemLog) System.out.println("\tforcePlateChannel : " + j + " - forcePlateChannelFramesCount : " + forcePlateChannelFramesCount);
+				for(int k = 0; k < forcePlateChannelFramesCount; k++) {
+					float value = byteBuffer.getFloat();
+					if(systemLog) System.out.println("\t\fforcePlateChannelFramesCount : " + k + " - value : " + value);
+				}
+			}
+		}
+		// Get device data
+		int deviceCount = byteBuffer.getInt();
+		dataSize = byteBuffer.getInt();
+		if(systemLog) System.out.println("deviceCount : " + deviceCount + " - dataSize : " + dataSize);
+		for (int i = 0; i < deviceCount; i++) {
+			int deviceID = byteBuffer.getInt();
+			int deviceChannelsCount = byteBuffer.getInt();
+			if(systemLog) System.out.println("\tforcePlateID : " + deviceID + " - forcePlateChannelsCount : " + deviceChannelsCount);
+			for(int j = 0; j < deviceChannelsCount; j++) {
+				float value = byteBuffer.getInt();
+				value = byteBuffer.getFloat();
+				if(systemLog) System.out.println("\t\tdeviceChannelsCount : " + j + " - value : " + value);
+			}
+		}
+		// Get frame suffix
+		int timeCode = byteBuffer.getInt();
+		int subTimeCode = byteBuffer.getInt();
+		double timeStamp = byteBuffer.getDouble();
+		double midExposureTimeStamp = byteBuffer.getDouble();
+		long stampDataReceived = byteBuffer.getLong();
+		long stampTransmit = byteBuffer.getLong();
+		int precTimestampSecs = byteBuffer.getInt();
+		int precTimestampFracSecs = byteBuffer.getInt();
+		short params = byteBuffer.getShort();
+		boolean isRecording = (params & 0x01) != 0;
+		boolean trackedModelsChanged = (params & 0x02) != 0;
+		if(systemLog) {
+			System.out.println("timeCode : " + timeCode + " - subTimeCode : " + subTimeCode);
+			System.out.println("midExposureTimeStamp : " + midExposureTimeStamp + " - timeStamp : " + timeStamp);
+			System.out.println("stampDataReceived : " + stampDataReceived + " - stampTransmit : " + stampTransmit);
+			System.out.println("precTimestampSecs : " + precTimestampSecs + " - precTimestampFracSecs : " + precTimestampFracSecs);
+			System.out.println("isRecording : " + isRecording + " - trackedModelsChanged : " + trackedModelsChanged);
+			System.out.println(">>>> End frame");
+		}
 	}
 
 	/**

@@ -59,7 +59,7 @@ public class UDPIXXATDataStreamer implements DataObserver {
 	
 	public static boolean ixxatstreamer = false;
 	public static boolean useCodamotion = false, useCodamotionSpecified = false, doAlignment = true;
-	public static boolean useXSens = false, useXSensSpecified = false;;
+	public static boolean useXSens = false, useXSensSpecified = false;
 	public static boolean useTimeStamp = false, useTimeStampSpecified = false;
 	public static boolean useOptitrack = false, useOptitrackSpecified = false;
 	
@@ -112,13 +112,14 @@ public class UDPIXXATDataStreamer implements DataObserver {
 	 * For Optitrack :
 	 * <ul>
 	 * <li>-useoptitrack : default false. Valid values are true or false</li>    
-	 * <li>-usemulticast : default false. Valid values are true or false</li>
-	 * <li>-optitracknbmarkers : default 1</li>
+	 * <li>-usemulticast : default true. Valid values are true or false</li>
+	 * <li>-optitracknbunlabeledmarkers : default 1</li>
+	 * <li>-optitrackfirstmarkerindex : default 0</li>
 	 * <li>-optitrackudpclientip : default localhost</li>
 	 * <li>-optitrackudpsourceport : default 1511</li>
 	 * </ul>
 	 * For instance :
-	 * -useoptitrack true
+	 * -useoptitrack true -usemulticast true -optitracknbunlabeledmarkers 3 -optitrackfirstmarkerindex 4
 	 *  <br><br>
 	 * @param params list of parameters configuration. See above.
 	 */
