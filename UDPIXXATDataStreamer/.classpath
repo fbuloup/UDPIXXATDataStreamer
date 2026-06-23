@@ -14,5 +14,14 @@
 			<attribute name="module" value="true"/>
 		</attributes>
 	</classpathentry>
+	<classpathentry kind="var" path="ECLIPSE_HOME/plugins/org.eclipse.swt_3.129.0.v20250221-1734.jar"/>
+	<classpathentry kind="var" path="ECLIPSE_HOME/plugins/org.eclipse.swt.nl_fr_4.26.0.v20230220105658.jar"/>
+	<classpathentry kind="var" path="ECLIPSE_HOME/plugins/org.eclipse.swt.win32.win32.x86_64_3.129.0.v20250221-1734.jar"/>
+	<classpathentry kind="var" path="ECLIPSE_HOME/plugins/org.eclipse.jface_3.36.0.v20250129-1243.jar" sourcepath="/ECLIPSE_HOME/plugins/org.eclipse.jface.source_3.36.0.v20250129-1243.jar"/>
+	<classpathentry kind="var" path="ECLIPSE_HOME/plugins/org.eclipse.jface.nl_fr_4.26.0.v20230220105658.jar"/>
+	<classpathentry kind="var" path="ECLIPSE_HOME/plugins/org.eclipse.core.runtime_3.33.0.v20250206-0919.jar"/>
+	<classpathentry kind="var" path="ECLIPSE_HOME/plugins/org.eclipse.core.runtime.nl_fr_4.26.0.v20230220105658.jar"/>
+	<classpathentry kind="var" path="ECLIPSE_HOME/plugins/org.eclipse.equinox.common_3.20.0.v20250129-1348.jar"/>
+	<classpathentry kind="var" path="ECLIPSE_HOME/plugins/org.eclipse.core.commands_3.12.300.v20241229-1638.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>
