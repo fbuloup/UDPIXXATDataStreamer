@@ -39,14 +39,73 @@ public final class StreamingProperties {
 	protected static String useXSensKey = "useXSens";
 	protected static String useTimerKey = "useTimer";
 	
-	protected static String selectedSytem = "";
-	protected static String selectedSytemKey = "selectedSytem";
+	protected static String selectedTabItem = "";
+	protected static String selectedTabItemKey = "selectedTabItem";
 	
+	protected static String streamingOptions = "STREAMIN_OPTIONS";
+	protected static String udpOptions = "UDP_OPTIONS";
 	protected static String codamotionSystem = "CODAMOTION";
 	protected static String optitrackSystem = "OPTITRACK";
 	protected static String xSensSystem = "XSENS";
 	protected static String timerSystem = "TIMER";
 	
+	// UDP OPTIONS
+	protected static String udpClientIP;
+	protected static String udpClientIPtKey = "udpClientIP";
+	protected static String udpSourcePort;
+	protected static String udpSourcePortKey = "udpSourcePort";
+	protected static String udpDestinationPort;
+	protected static String udpDestinationPortKey = "udpDestinationPort";
+	
+	// TIMER
+	protected static int timerFrequency;
+	protected static String timerFrequencyKey = "timerFrequency";
+	
+	// XSens
+	protected static int xSensFrequency;
+	protected static String xSensFrequencyKey = "xSensFrequency";
+	protected static String xSensSerialNumber;
+	protected static String xSensSerialNumberKey = "xSensSerialNumber";
+	
+	// OPTITRACK
+	protected static boolean otUseMulticast;
+	protected static String otUseMulticastKey = "otUseMulticast";
+	protected static int otNbUnlabeledMarkers;
+	protected static String otNbUnlabeledMarkersKey = "otNbUnlabeledMarkers";
+	protected static int otFirstMarkerIndex;
+	protected static String otFirstMarkerIndexKey = "otFirstMarkerIndex";
+	protected static String otMulticastIP;
+	protected static String otMulticastIPKey = "otMulticastIP";
+	protected static String otUdpSourcePort;
+	protected static String otUdpSourcePortKey = "otUdpSourcePort";
+	protected static String otUdpClientIP;
+	protected static String otUdpClientIPKey = "otUdpClientIP";
+	
+	// CODAMOTION
+	protected static String codaServerIP;
+	protected static String codaServerIPKey = "codaServerIP";
+	protected static String codaFrameRate;
+	protected static String codaFrameRateKey = "codaFrameRate";
+	protected static int codaDecimation;
+	protected static String codaDecimationKey = "codaDecimation";
+	protected static int codaNBMarkers;
+	protected static String codaNBMarkersKey = "codaNBMarkers";
+	protected static int codaFirstMarkerIndex;
+	protected static String codaFirstMarkerIndexKey = "codaFirstMarkerIndex";
+//	protected static String codaUDPClientIP;
+//	protected static String codaUDPClientIPKey = "codaUDPClientIP";
+//	protected static String codaUDPSourcePort;
+//	protected static String codaUDPSourcePortKey = "codaUDPSourcePort";
+//	protected static String codaUDPDestinationPort;
+//	protected static String codaUDPDestinationPortKey = "codaUDPDestinationPort";
+	protected static String codaFrameNumber;
+	protected static String codaFrameNumberKey = "codaFrameNumber";
+	protected static boolean codaAutoGrab;
+	protected static String codaAutoGrabKey = "codaAutoGrab";
+	protected static boolean codaDoAlignment;
+	protected static String codaDoAlignmentKey = "codaDoAlignment";
+	protected static boolean codaSimulMode;
+	protected static String codaSimulModeKey = "codaSimulMode";
 	
 	protected static void loadProperties() throws IOException {
 		
@@ -67,7 +126,36 @@ public final class StreamingProperties {
 		useXSens = Boolean.parseBoolean(properties.getProperty(useXSensKey, "false"));
 		useTimer = Boolean.parseBoolean(properties.getProperty(useTimerKey, "false"));
 		
-		selectedSytem = properties.getProperty(selectedSytemKey, codamotionSystem);
+		selectedTabItem = properties.getProperty(selectedTabItemKey, codamotionSystem);
+		
+		udpClientIP = properties.getProperty(udpClientIPtKey, "localhost");
+		udpSourcePort = properties.getProperty(udpSourcePortKey, "15000");
+		udpDestinationPort = properties.getProperty(udpDestinationPortKey, "15000");
+		
+		timerFrequency = Integer.parseInt(properties.getProperty(timerFrequencyKey, "1"));
+		
+		xSensFrequency = Integer.parseInt(properties.getProperty(xSensFrequencyKey, "100"));
+		xSensSerialNumber = properties.getProperty(xSensSerialNumberKey, "NE3B-79EA-K6RP-WDNH-QA2Y");
+		
+		otUseMulticast = Boolean.parseBoolean(properties.getProperty(otUseMulticastKey, "true"));
+		otNbUnlabeledMarkers = Integer.parseInt(properties.getProperty(otNbUnlabeledMarkersKey, "1"));
+		otFirstMarkerIndex = Integer.parseInt(properties.getProperty(otFirstMarkerIndexKey, "0"));
+		otMulticastIP = properties.getProperty(otMulticastIPKey, "239.255.42.99");
+		otUdpSourcePort = properties.getProperty(otUdpSourcePortKey, "1511");
+		otUdpClientIP = properties.getProperty(otUdpClientIPKey, "localhost");
+		
+		codaServerIP = properties.getProperty(codaServerIPKey, "localhost");
+		codaFrameRate = properties.getProperty(codaFrameRateKey, "100");
+		codaDecimation = Integer.parseInt(properties.getProperty(codaDecimationKey, "1"));
+		codaNBMarkers = Integer.parseInt(properties.getProperty(codaNBMarkersKey, "1"));
+		codaFirstMarkerIndex = Integer.parseInt(properties.getProperty(codaFirstMarkerIndexKey, "1"));
+//		codaUDPClientIP = properties.getProperty(codaUDPClientIPKey, "localhost");
+//		codaUDPSourcePort = properties.getProperty(codaUDPSourcePortKey, "15000");
+//		codaUDPDestinationPort = properties.getProperty(codaUDPDestinationPortKey, "15000");
+		codaFrameNumber = properties.getProperty(codaFrameNumberKey, "-1");
+		codaAutoGrab = Boolean.parseBoolean(properties.getProperty(codaAutoGrabKey, "true"));
+		codaDoAlignment = Boolean.parseBoolean(properties.getProperty(codaDoAlignmentKey, "false"));
+		codaSimulMode = Boolean.parseBoolean(properties.getProperty(codaSimulModeKey, "false"));
 		
 	}
 	
@@ -86,7 +174,34 @@ public final class StreamingProperties {
 		properties.setProperty(useXSensKey, Boolean.toString(useXSens));
 		properties.setProperty(useTimerKey, Boolean.toString(useTimer));
 		
-		properties.setProperty(selectedSytemKey, selectedSytem);
+		properties.setProperty(selectedTabItemKey, selectedTabItem);
+		
+		properties.setProperty(udpClientIPtKey, udpClientIP);
+		properties.setProperty(udpSourcePortKey, udpSourcePort);
+		properties.setProperty(udpDestinationPortKey, udpDestinationPort);
+		
+		properties.setProperty(timerFrequencyKey, Integer.toString(timerFrequency));
+		
+		properties.setProperty(xSensFrequencyKey, Integer.toString(xSensFrequency));
+		properties.setProperty(xSensSerialNumberKey, xSensSerialNumber);
+		
+		properties.setProperty(otUseMulticastKey, Boolean.toString(otUseMulticast));
+		properties.setProperty(otNbUnlabeledMarkersKey, Integer.toString(otNbUnlabeledMarkers));
+		properties.setProperty(otFirstMarkerIndexKey, Integer.toString(otFirstMarkerIndex));
+		properties.setProperty(otMulticastIPKey, otMulticastIP);
+		properties.setProperty(otUdpSourcePortKey, otUdpSourcePort);
+		properties.setProperty(otUdpClientIPKey, otUdpClientIP);
+		
+		properties.setProperty(codaServerIPKey, codaServerIP);
+		properties.setProperty(codaFrameRateKey, codaFrameRate);
+		properties.setProperty(codaDecimationKey, Integer.toString(codaDecimation));
+		properties.setProperty(codaNBMarkersKey, Integer.toString(codaNBMarkers));
+		properties.setProperty(codaFirstMarkerIndexKey, Integer.toString(codaFirstMarkerIndex));
+//		properties.setProperty(codaUDPClientIPKey, codaUDPClientIP);
+//		properties.setProperty(codaUDPSourcePortKey, codaUDPSourcePort);
+//		properties.setProperty(codaUDPDestinationPortKey, codaUDPDestinationPort);
+		properties.setProperty(codaFrameNumberKey, codaFrameNumber);
+		properties.setProperty(codaAutoGrabKey, Boolean.toString(codaAutoGrab));
 		
 		try {
 			FileOutputStream fileOutputStream = new FileOutputStream(propertiesFileName);

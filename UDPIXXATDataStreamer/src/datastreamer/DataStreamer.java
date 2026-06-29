@@ -29,21 +29,22 @@ import udpixxatdatastreamer.UDPIXXATDataStreamer;
 
 /**
  * This is the main class that is responsible to run continuous acquisition
- * on Coda or xsens unit or time server. <br>It retrieves each frame and send its values to any registered
+ * on Coda or Optitrack or xsens unit or time server. <br>It retrieves each 
+ * frame and send its values to any registered
  * observer (these observers must implement DataObserver interface) .
- * Each sent frame can have up to height by eight bits pattern.<br><br>
+ * Each sent frame can have up to 64 bits pattern.<br><br>
  * 
- * CODA SYTEM :<br>
- * For coda system, frame must be read like this : <br>
+ * CODA or OPTITRACK SYTEM :<br>
+ * For coda/optitrack system, frame must be read like this : <br>
  * FIRST BYTE :
  * b7b6 b5 b4b3b2b1b0<br>
- * b7b6 are system code on two bits : 00 for coda<br>
+ * b7b6 are system code on two bits : 00 for coda or optitrack<br>
  * b5 is visibility bit<br>
  * b4b3b2b1b0 are sensor number (max 32)<br>
  * SECOND BYTE : frameID<br>
- * THIRD AND FOURTH BYTES : on two bytes - X sensor value<br>
- * FIFTH AND SIXTH : on two bytes - Y sensor value<br>
- * SEVENTH AND NINTH : on two bytes - Z sensor value<br><br>
+ * THIRD AND FOURTH BYTES : X sensor value<br>
+ * FIFTH AND SIXTH : Y sensor value<br>
+ * SEVENTH AND NINTH : Z sensor value<br><br>
  * 
  * XSENS SYSTEM :<br>
  * For xsens system, frame must be read like this : <br>
@@ -60,7 +61,7 @@ import udpixxatdatastreamer.UDPIXXATDataStreamer;
  * SECOND BYTE : minutes on six bits, b7 and b6 are always zero<br>
  * THIRD BYTE : seconds on six bits, b7 and b6 are always zero<br>
  * 
- * @author centricoda
+ * @author fbuloup
  */
 public class DataStreamer extends Thread {
 	/*
