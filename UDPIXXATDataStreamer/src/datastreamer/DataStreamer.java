@@ -378,6 +378,8 @@ public class DataStreamer extends Thread {
 			for (int i = 0; i < params.length; i++) {
 				if(params[i].toLowerCase().equals(timeStampSampleFrequencyToken)) timeStampSampleFrequency = Integer.parseInt(params[i+1]);
 			}
+			if(timeStampSampleFrequency == 0) timeStampSampleFrequency = 1;
+			System.out.println("Use time stamp with frequency : " + timeStampSampleFrequency);
 		}
 		
 		// Use Optitrack {		
@@ -521,9 +523,9 @@ public class DataStreamer extends Thread {
 									xValue = (short) (10*codaValues[3*j]);
 									yValue = (short) (10*codaValues[3*j + 1]);
 									zValue = (short) (10*codaValues[3*j + 2]);
-									System.out.println("Marker " + (j + firstMarkerIndex) + " xValue : " + xValue);
-									System.out.println("Marker " + (j + firstMarkerIndex) + " yValue : " + yValue);
-									System.out.println("Marker " + (j + firstMarkerIndex) + " zValue : " + zValue);
+									System.out.println("Coda Marker " + (j + firstMarkerIndex) + " xValue : " + xValue);
+									System.out.println("Coda Marker " + (j + firstMarkerIndex) + " yValue : " + yValue);
+									System.out.println("Coda Marker " + (j + firstMarkerIndex) + " zValue : " + zValue);
 								}
 							}
 							
@@ -641,6 +643,10 @@ public class DataStreamer extends Thread {
 								}
 								
 								
+							}
+							
+							if(doDisplay) {
+								System.out.println(">>>> Display every 2 seconds - 'S' + ENTER to stop streaming - 'P' + ENTER to pause streaming - 'D' + ENTER to toggle display");
 							}
 							
 							if(!UDPIXXATDataStreamer.useCodamotion && !UDPIXXATDataStreamer.useXSens && !UDPIXXATDataStreamer.useTimeStamp) n++;
