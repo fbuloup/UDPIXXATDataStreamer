@@ -125,7 +125,8 @@ public class UDPIXXATDataStreamer implements DataObserver {
 	 */
 	public static void main(String[] params) {
 		
-		System.out.println("OS Arch. :" + System.getProperty("sun.arch.data.model"));  
+		System.out.println("OS Arch. : " + System.getProperty("sun.arch.data.model"));  
+		System.out.println("OS name : " + System.getProperty("os.name"));  
 		
 		for (int i = 0; i < params.length; i++) {
 			if(params[i].toLowerCase().equalsIgnoreCase(ixxatstreamerToken)) {

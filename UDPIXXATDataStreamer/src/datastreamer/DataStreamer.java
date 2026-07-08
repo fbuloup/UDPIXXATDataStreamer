@@ -639,14 +639,7 @@ public class DataStreamer extends Thread {
 											System.out.println("Optitrack Marker " + (j + optitrackFirstMarkerIndex) + " zValue (mm) : " + zValue);
 										}
 									}
-									
 								}
-								
-								
-							}
-							
-							if(doDisplay) {
-								System.out.println(">>>> Display every 2 seconds - 'S' + ENTER to stop streaming - 'P' + ENTER to pause streaming - 'D' + ENTER to toggle display");
 							}
 							
 							if(!UDPIXXATDataStreamer.useCodamotion && !UDPIXXATDataStreamer.useXSens && !UDPIXXATDataStreamer.useTimeStamp) n++;
@@ -657,7 +650,12 @@ public class DataStreamer extends Thread {
 							
 					}
 					
+					if(doDisplay) {
+						System.out.println(">>>> Display every 2 seconds - 'S' + ENTER to stop streaming - 'P' + ENTER to pause streaming - 'D' + ENTER to toggle display");
+					}
 				}
+				
+				
 				
 				if(!paused && pause) {
 					if(UDPIXXATDataStreamer.useCodamotion) codaUnit.acqStop();

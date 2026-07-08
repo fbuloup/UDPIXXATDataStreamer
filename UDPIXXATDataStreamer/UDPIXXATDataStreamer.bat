@@ -1,0 +1,2 @@
+java -jar UDPIXXATDataStreamer.jar -useGUI true -ixxatstreamer false -udpclientip localhost -udpsourceport 15000 -udpdestinationport 15000 -usecoda false -usexsens false -usetimestamp true -timestampsamplefrequency 1 -useoptitrack false
+exit
