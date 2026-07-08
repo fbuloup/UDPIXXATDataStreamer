@@ -7,6 +7,9 @@ import java.util.Properties;
 
 import org.eclipse.jface.dialogs.MessageDialog;
 
+import datastreamer.DataStreamer;
+import udpixxatdatastreamer.UDPIXXATDataStreamer;
+
 public final class StreamingProperties {
 	
 	private static String propertiesFileName = "CanBridge.properties";
@@ -31,13 +34,17 @@ public final class StreamingProperties {
 	protected static boolean useXSens;
 	protected static boolean useTimer;
 	
-	protected static String useUDPKey = "useUDP";
-	protected static String useIXXATKey = "useIXXAT";
+
+	protected static String useGUIToken = "-useGUI";
+	protected static boolean useGUI;
 	
-	protected static String useCodamotionKey = "useCodamotion";
-	protected static String useOptitrackKey = "useOptitrack";
-	protected static String useXSensKey = "useXSens";
-	protected static String useTimerKey = "useTimer";
+	protected static String useUDPKey = "-useUDP";
+	protected static String useIXXATKey = UDPIXXATDataStreamer.ixxatstreamerToken;
+	
+	protected static String useCodamotionKey = UDPIXXATDataStreamer.useCodaToken;
+	protected static String useOptitrackKey = UDPIXXATDataStreamer.useOptitrackToken;
+	protected static String useXSensKey = UDPIXXATDataStreamer.useXSensToken;
+	protected static String useTimerKey = UDPIXXATDataStreamer.useTimeStampToken;
 	
 	protected static String selectedTabItem = "";
 	protected static String selectedTabItemKey = "selectedTabItem";
@@ -51,61 +58,55 @@ public final class StreamingProperties {
 	
 	// UDP OPTIONS
 	protected static String udpClientIP;
-	protected static String udpClientIPtKey = "udpClientIP";
+	protected static String udpClientIPKey = UDPIXXATDataStreamer.udpClientIPToken;
 	protected static String udpSourcePort;
-	protected static String udpSourcePortKey = "udpSourcePort";
+	protected static String udpSourcePortKey = UDPIXXATDataStreamer.udpSourcePortToken;
 	protected static String udpDestinationPort;
-	protected static String udpDestinationPortKey = "udpDestinationPort";
+	protected static String udpDestinationPortKey = UDPIXXATDataStreamer.udpDestinationPortToken;
 	
 	// TIMER
 	protected static int timerFrequency;
-	protected static String timerFrequencyKey = "timerFrequency";
+	protected static String timerFrequencyKey = DataStreamer.timeStampSampleFrequencyToken;
 	
 	// XSens
 	protected static int xSensFrequency;
-	protected static String xSensFrequencyKey = "xSensFrequency";
+	protected static String xSensFrequencyKey = DataStreamer.xsensSampleFrequencyToken;
 	protected static String xSensSerialNumber;
-	protected static String xSensSerialNumberKey = "xSensSerialNumber";
+	protected static String xSensSerialNumberKey = DataStreamer.xsensSerialkeyToken;
 	
 	// OPTITRACK
 	protected static boolean otUseMulticast;
-	protected static String otUseMulticastKey = "otUseMulticast";
+	protected static String otUseMulticastKey = DataStreamer.useMulticastToken;
 	protected static int otNbUnlabeledMarkers;
-	protected static String otNbUnlabeledMarkersKey = "otNbUnlabeledMarkers";
+	protected static String otNbUnlabeledMarkersKey = DataStreamer.optitrackNbUnlabeledMarkersToken;
 	protected static int otFirstMarkerIndex;
-	protected static String otFirstMarkerIndexKey = "otFirstMarkerIndex";
+	protected static String otFirstMarkerIndexKey = DataStreamer.optitrackfirstMarkerIndexToken;
 	protected static String otMulticastIP;
-	protected static String otMulticastIPKey = "otMulticastIP";
+	protected static String otMulticastIPKey = DataStreamer.optitrackMulticastIPToken;
 	protected static String otUdpSourcePort;
-	protected static String otUdpSourcePortKey = "otUdpSourcePort";
+	protected static String otUdpSourcePortKey = DataStreamer.optitrackUDPDataPortToken;
 	protected static String otUdpClientIP;
-	protected static String otUdpClientIPKey = "otUdpClientIP";
+	protected static String otUdpClientIPKey = DataStreamer.optitrackUDPServerIPToken;
 	
 	// CODAMOTION
 	protected static String codaServerIP;
-	protected static String codaServerIPKey = "codaServerIP";
+	protected static String codaServerIPKey = DataStreamer.codaServerIPToken;
 	protected static String codaFrameRate;
-	protected static String codaFrameRateKey = "codaFrameRate";
+	protected static String codaFrameRateKey = DataStreamer.frameRateToken;
 	protected static int codaDecimation;
-	protected static String codaDecimationKey = "codaDecimation";
+	protected static String codaDecimationKey = DataStreamer.decimationToken;
 	protected static int codaNBMarkers;
-	protected static String codaNBMarkersKey = "codaNBMarkers";
+	protected static String codaNBMarkersKey = DataStreamer.nbMarkersToken;
 	protected static int codaFirstMarkerIndex;
-	protected static String codaFirstMarkerIndexKey = "codaFirstMarkerIndex";
-//	protected static String codaUDPClientIP;
-//	protected static String codaUDPClientIPKey = "codaUDPClientIP";
-//	protected static String codaUDPSourcePort;
-//	protected static String codaUDPSourcePortKey = "codaUDPSourcePort";
-//	protected static String codaUDPDestinationPort;
-//	protected static String codaUDPDestinationPortKey = "codaUDPDestinationPort";
+	protected static String codaFirstMarkerIndexKey = DataStreamer.firstMarkerIndexToken;
 	protected static String codaFrameNumber;
-	protected static String codaFrameNumberKey = "codaFrameNumber";
+	protected static String codaFrameNumberKey = DataStreamer.framesNumberToken;
 	protected static boolean codaAutoGrab;
-	protected static String codaAutoGrabKey = "codaAutoGrab";
+	protected static String codaAutoGrabKey = DataStreamer.autoGrabToken;
 	protected static boolean codaDoAlignment;
-	protected static String codaDoAlignmentKey = "codaDoAlignment";
+	protected static String codaDoAlignmentKey = DataStreamer.doAlignmentToken;
 	protected static boolean codaSimulMode;
-	protected static String codaSimulModeKey = "codaSimulMode";
+	protected static String codaSimulModeKey = DataStreamer.simulModeToken;
 	
 	protected static void loadProperties() throws IOException {
 		
@@ -128,7 +129,7 @@ public final class StreamingProperties {
 		
 		selectedTabItem = properties.getProperty(selectedTabItemKey, codamotionSystem);
 		
-		udpClientIP = properties.getProperty(udpClientIPtKey, "localhost");
+		udpClientIP = properties.getProperty(udpClientIPKey, "localhost");
 		udpSourcePort = properties.getProperty(udpSourcePortKey, "15000");
 		udpDestinationPort = properties.getProperty(udpDestinationPortKey, "15000");
 		
@@ -176,7 +177,7 @@ public final class StreamingProperties {
 		
 		properties.setProperty(selectedTabItemKey, selectedTabItem);
 		
-		properties.setProperty(udpClientIPtKey, udpClientIP);
+		properties.setProperty(udpClientIPKey, udpClientIP);
 		properties.setProperty(udpSourcePortKey, udpSourcePort);
 		properties.setProperty(udpDestinationPortKey, udpDestinationPort);
 		

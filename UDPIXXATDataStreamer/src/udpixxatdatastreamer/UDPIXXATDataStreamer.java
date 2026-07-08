@@ -36,26 +36,26 @@ public class UDPIXXATDataStreamer implements DataObserver {
 	private static int freeCount;
 	public static String warningMessage;
 	
-	private final static String ixxatstreamerToken = "-ixxatstreamer";
-	private final static String udpClientIPToken = "-udpclientip";
-	private final static String udpSourcePortToken = "-udpsourceport";
-	private final static String udpDestinationPortToken = "-udpdestinationport";
+	// If true => use IXXAT USB
+	public final static String ixxatstreamerToken = "-ixxatstreamer";
 	
 	/*
 	 * Parameters for UPD CAN/Ethernet bridge
 	 */
+	// else use UDP
+	public final static String udpClientIPToken = "-udpclientip";
+	public final static String udpSourcePortToken = "-udpsourceport";
+	public final static String udpDestinationPortToken = "-udpdestinationport";
 	private static String udpClientIP = "localhost"; // IP of CAN/Ethernet Bridge
 	private static int udpSourcePort = 15000; // source port of UPD (local)
 	private static int udpDestinationPort = Integer.MIN_VALUE; // destination port UPD (CAN/Ethernet Bridge)
 	private static DatagramSocket dgSocket;
 	private static InetAddress clientIP;
 	
-	private final static String useCodaToken = "-usecoda";
-	private final static String useXSensToken = "-usexsens";
-	private final static String useTimeStampToken = "-usetimestamp";
-	private final static String useOptitrackToken = "-useoptitrack";
-	
-	private final static String doAlignmentToken = "-doalignment";
+	public final static String useCodaToken = "-usecoda";
+	public final static String useXSensToken = "-usexsens";
+	public final static String useTimeStampToken = "-usetimestamp";
+	public final static String useOptitrackToken = "-useoptitrack";
 	
 	public static boolean ixxatstreamer = false;
 	public static boolean useCodamotion = false, useCodamotionSpecified = false, doAlignment = true;
@@ -128,27 +128,27 @@ public class UDPIXXATDataStreamer implements DataObserver {
 		System.out.println("OS Arch. :" + System.getProperty("sun.arch.data.model"));  
 		
 		for (int i = 0; i < params.length; i++) {
-			if(params[i].toLowerCase().equals(ixxatstreamerToken)) {
+			if(params[i].toLowerCase().equalsIgnoreCase(ixxatstreamerToken)) {
 				ixxatstreamer = Boolean.parseBoolean(params[i+1]);
 			}
-			if(params[i].toLowerCase().equals(useCodaToken)) {
+			if(params[i].toLowerCase().equalsIgnoreCase(useCodaToken)) {
 				useCodamotion = Boolean.parseBoolean(params[i+1]);
 				useCodamotionSpecified = true;
 			}
-			if(params[i].toLowerCase().equals(useXSensToken)) {
+			if(params[i].toLowerCase().equalsIgnoreCase(useXSensToken)) {
 				useXSens = Boolean.parseBoolean(params[i+1]);
 				useXSensSpecified = true;
 			}
-			if(params[i].toLowerCase().equals(useTimeStampToken)) {
+			if(params[i].toLowerCase().equalsIgnoreCase(useTimeStampToken)) {
 				useTimeStamp = Boolean.parseBoolean(params[i+1]);
 				useTimeStampSpecified = true;
 			}
-			if(params[i].toLowerCase().equals(useOptitrackToken)) {
+			if(params[i].toLowerCase().equalsIgnoreCase(useOptitrackToken)) {
 				useOptitrack = Boolean.parseBoolean(params[i+1]);
 				useOptitrackSpecified = true;
 			}
 			
-			if(params[i].toLowerCase().equals(doAlignmentToken)) {
+			if(params[i].toLowerCase().equalsIgnoreCase(DataStreamer.doAlignmentToken)) {
 				doAlignment = Boolean.parseBoolean(params[i+1]);
 			}
 			
@@ -332,9 +332,9 @@ public class UDPIXXATDataStreamer implements DataObserver {
 		if(!ixxatstreamer) {
 			try {
 				for (int i = 0; i < args.length; i++) {
-					if(args[i].toLowerCase().equals(udpClientIPToken)) udpClientIP = args[i+1];
-					if(args[i].toLowerCase().equals(udpSourcePortToken)) udpSourcePort = Integer.parseInt(args[i+1]);
-					if(args[i].toLowerCase().equals(udpDestinationPortToken)) udpDestinationPort = Integer.parseInt(args[i+1]);
+					if(args[i].toLowerCase().equalsIgnoreCase(udpClientIPToken)) udpClientIP = args[i+1];
+					if(args[i].toLowerCase().equalsIgnoreCase(udpSourcePortToken)) udpSourcePort = Integer.parseInt(args[i+1]);
+					if(args[i].toLowerCase().equalsIgnoreCase(udpDestinationPortToken)) udpDestinationPort = Integer.parseInt(args[i+1]);
 				}
 				if(udpDestinationPort == Integer.MIN_VALUE) udpDestinationPort = udpSourcePort;
 				dgSocket = new DatagramSocket(udpSourcePort);

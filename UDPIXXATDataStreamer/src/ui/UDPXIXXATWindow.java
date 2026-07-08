@@ -1,9 +1,8 @@
 package ui;
 
+import java.io.File;
+import java.io.FileWriter;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.io.PrintStream;
 
 import org.eclipse.jface.action.StatusLineManager;
 import org.eclipse.jface.dialogs.MessageDialog;
@@ -22,15 +21,12 @@ import udpixxatdatastreamer.UDPIXXATDataStreamer;
 import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.custom.CTabFolder;
 import org.eclipse.swt.custom.CTabItem;
-import org.eclipse.swt.custom.StyledText;
 import org.eclipse.swt.events.ControlAdapter;
 import org.eclipse.swt.events.ControlEvent;
 import org.eclipse.swt.events.ModifyEvent;
 import org.eclipse.swt.events.ModifyListener;
 import org.eclipse.swt.events.SelectionAdapter;
 import org.eclipse.swt.events.SelectionEvent;
-import org.eclipse.swt.events.TraverseEvent;
-import org.eclipse.swt.events.TraverseListener;
 import org.eclipse.swt.widgets.Group;
 import org.eclipse.swt.widgets.Label;
 import org.eclipse.swt.layout.GridData;
@@ -39,10 +35,9 @@ import org.eclipse.swt.widgets.Combo;
 
 public class UDPXIXXATWindow extends ApplicationWindow {
 
-	private Button udpButton;
-	private Button ixxatButton;
-	private boolean running;
-	private StyledText consoleStyledText;
+	private static Button udpButton;
+	private static Button ixxatButton;
+	private static boolean running;
 
 	/**
 	 * Create the application window,
@@ -129,7 +124,7 @@ public class UDPXIXXATWindow extends ApplicationWindow {
 		*/
 		
 		
-		Label udpClientIPLabel = new Label(container, SWT.BORDER);
+		Label udpClientIPLabel = new Label(container, SWT.NONE);
 		udpClientIPLabel.setText("UDP Client IP : ");
 		udpClientIPLabel.setLayoutData(new GridData(SWT.RIGHT, SWT.CENTER, false, false));
 		Text udpClientIPText = new Text(container, SWT.BORDER);
@@ -143,7 +138,7 @@ public class UDPXIXXATWindow extends ApplicationWindow {
 			}
 		});
 		
-		Label udpSourcePortLabel = new Label(container, SWT.BORDER);
+		Label udpSourcePortLabel = new Label(container, SWT.NONE);
 		udpSourcePortLabel.setText("UDP Source port : ");
 		udpSourcePortLabel.setLayoutData(new GridData(SWT.RIGHT, SWT.CENTER, false, false));
 		Text udpSourcePortText = new Text(container, SWT.BORDER);
@@ -157,7 +152,7 @@ public class UDPXIXXATWindow extends ApplicationWindow {
 			}
 		});
 		
-		Label udpDestinationPortLabel = new Label(container, SWT.BORDER);
+		Label udpDestinationPortLabel = new Label(container, SWT.NONE);
 		udpDestinationPortLabel.setText("UDP Destination port : ");
 		udpDestinationPortLabel.setLayoutData(new GridData(SWT.RIGHT, SWT.CENTER, false, false));
 		Text udpDestinationePortText = new Text(container, SWT.BORDER);
@@ -258,28 +253,25 @@ public class UDPXIXXATWindow extends ApplicationWindow {
 			}
 		});
 		
-		Composite consoleToolBar = new Composite(container, SWT.NONE);
-		consoleToolBar.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, false, 1, 1));
-		consoleToolBar.setLayout(new GridLayout(2, false));
+//		Composite consoleToolBar = new Composite(container, SWT.NONE);
+//		consoleToolBar.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, false, 1, 1));
+//		consoleToolBar.setLayout(new GridLayout(2, false));
+//		
+//		Label consoleLabel = new Label(consoleToolBar, SWT.NONE);
+//		consoleLabel.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, false, 1, 1));
+//		consoleLabel.setText("Console");
 		
-		Label consoleLabel = new Label(consoleToolBar, SWT.NONE);
-		consoleLabel.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, false, 1, 1));
-		consoleLabel.setText("Console");
-		
-		Button startStopButton = new Button(consoleToolBar, SWT.FLAT);
-		startStopButton.setText("Start");
-		startStopButton.setLayoutData(new GridData(SWT.RIGHT, SWT.FILL, true, false));
+		Button startStopButton = new Button(container, SWT.FLAT);
+		startStopButton.setText("<<<< Start >>>>");
+		startStopButton.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, true));
 		startStopButton.addSelectionListener(new SelectionAdapter() {
 			@Override
 			public void widgetSelected(SelectionEvent e) {
 				startStopHandler();
-				if(running) startStopButton.setText("Stop");
-				else startStopButton.setText("Start");
+//				if(running) startStopButton.setText("Stop");
+//				else startStopButton.setText("Start");
 			}
 		});
-		
-		consoleStyledText = new StyledText(container, SWT.BORDER);
-		consoleStyledText.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, true, 1, 1));
 		
 		tabItem.setControl(container);
 	}
@@ -287,60 +279,69 @@ public class UDPXIXXATWindow extends ApplicationWindow {
 	protected void startStopHandler() {
 		if(!running) {
 			// Compute command line parameters
-			String cmdLine = "-ixxatstreamer false -udpclientip ";
-			cmdLine = cmdLine + StreamingProperties.udpClientIP;
-			cmdLine = cmdLine + " -udpsourceport " + StreamingProperties.udpSourcePort;
-			cmdLine = cmdLine + " -udpdestinationport " + StreamingProperties.udpDestinationPort;
-			if(StreamingProperties.useIXXAT) cmdLine = "-ixxatstreamer true";
-			cmdLine = cmdLine + " -usecoda false";
-			cmdLine = cmdLine + " -useoptitrack false";
-			cmdLine = cmdLine + " -usexsens false";
+			String cmdLine = "java -jar UDPIXXATDataStreamer.jar " + StreamingProperties.useGUIToken + " true";
+			if(StreamingProperties.useIXXAT) cmdLine = cmdLine + " " + StreamingProperties.useIXXATKey + " true";
+			else {
+				cmdLine = cmdLine + " " + StreamingProperties.useIXXATKey + " false";
+				cmdLine = cmdLine + " " + StreamingProperties.udpClientIPKey + " " + StreamingProperties.udpClientIP;
+				cmdLine = cmdLine + " " + StreamingProperties.udpSourcePortKey + " " + StreamingProperties.udpSourcePort;
+				cmdLine = cmdLine + " " + StreamingProperties.udpDestinationPortKey + " " + StreamingProperties.udpDestinationPort;
+			}
+
+			cmdLine = cmdLine + " " + StreamingProperties.useCodamotionKey + " " + StreamingProperties.useCodamotion;
+			if(StreamingProperties.useCodamotion) {
+				cmdLine = cmdLine + " " + StreamingProperties.codaServerIPKey + " " + StreamingProperties.codaServerIP;
+				cmdLine = cmdLine + " " + StreamingProperties.codaFrameRateKey + " " + StreamingProperties.codaFrameRate;
+				cmdLine = cmdLine + " " + StreamingProperties.codaDecimationKey + " " + StreamingProperties.codaDecimation;
+				cmdLine = cmdLine + " " + StreamingProperties.codaNBMarkersKey + " " + StreamingProperties.codaNBMarkers;
+				cmdLine = cmdLine + " " + StreamingProperties.codaFirstMarkerIndexKey + " " + StreamingProperties.codaFirstMarkerIndex;
+				cmdLine = cmdLine + " " + StreamingProperties.codaFrameNumberKey + " " + StreamingProperties.codaFrameNumber;
+				cmdLine = cmdLine + " " + StreamingProperties.codaAutoGrabKey + " " + StreamingProperties.codaAutoGrab;
+				cmdLine = cmdLine + " " + StreamingProperties.codaSimulModeKey + " " + StreamingProperties.codaSimulMode;
+				cmdLine = cmdLine + " " + StreamingProperties.codaDoAlignmentKey + " " + StreamingProperties.codaDoAlignment;
+			}
+			
+			cmdLine = cmdLine + " " + StreamingProperties.useXSensKey + " " + StreamingProperties.useXSens;
+			if(StreamingProperties.useXSens) {
+				cmdLine = cmdLine + " " + StreamingProperties.xSensSerialNumberKey + " " + StreamingProperties.xSensSerialNumber;
+				cmdLine = cmdLine + " " + StreamingProperties.xSensFrequencyKey + " " + StreamingProperties.xSensFrequency;
+			}
+			
+			cmdLine = cmdLine + " " + StreamingProperties.useTimerKey + " " + StreamingProperties.useTimer;
 			if(StreamingProperties.useTimer) {
-				cmdLine = cmdLine + " -usetimestamp true";
-				cmdLine = cmdLine + " -timestampsamplefrequency " + StreamingProperties.timerFrequency;
-			} else cmdLine = cmdLine + " -usetimestamp false";
+				cmdLine = cmdLine + " " + StreamingProperties.timerFrequencyKey + " " + StreamingProperties.timerFrequency;
+			} 
 			
-			OutputStream out = new OutputStream() {
-				@Override
-				public void write(int b) throws IOException {
-					if (consoleStyledText.isDisposed()) return;
-					consoleStyledText.append(String.valueOf((char) b));
-				}
-			};
-			System.setOut(new PrintStream(out));
+			cmdLine = cmdLine + " " + StreamingProperties.useOptitrackKey + " " + StreamingProperties.useOptitrack;
+			if(StreamingProperties.useOptitrack) {
+				cmdLine = cmdLine + " " + StreamingProperties.otUseMulticastKey + " " + StreamingProperties.otUseMulticast;
+				cmdLine = cmdLine + " " + StreamingProperties.otNbUnlabeledMarkersKey + " " + StreamingProperties.otNbUnlabeledMarkers;
+				cmdLine = cmdLine + " " + StreamingProperties.otFirstMarkerIndexKey + " " + StreamingProperties.otFirstMarkerIndex;
+				cmdLine = cmdLine + " " + StreamingProperties.otMulticastIPKey + " " + StreamingProperties.otMulticastIP;
+				cmdLine = cmdLine + " " + StreamingProperties.otUdpClientIPKey + " " + StreamingProperties.otUdpClientIP;
+				cmdLine = cmdLine + " " + StreamingProperties.otUdpSourcePortKey + " " + StreamingProperties.otUdpSourcePort;
+				cmdLine = cmdLine + " " + StreamingProperties.otMulticastIPKey + " " + StreamingProperties.otMulticastIP;
+			}
 			
-			OutputStream err = new OutputStream() {
-				@Override
-				public void write(int b) throws IOException {
-					if (consoleStyledText.isDisposed()) return;
-					consoleStyledText.append(String.valueOf((char) b));
-				}
-			};
-			System.setErr(new PrintStream(err));
+			cmdLine = cmdLine + "\n" + "exit";
+			try {
 			
-			InputStream in = new InputStream() {
-				@Override
-				public int read() throws IOException {
-					// TODO Auto-generated method stub
-					return 'n';
-				}
-			};
-			System.setIn(in);
+				final String batFilePath = "UDPIXXATDataStreamer.bat";
+				final File batFile = new File(batFilePath);
+				if(batFile.exists()) batFile.delete();
+				FileWriter fileWriter = new FileWriter(batFile);
+				fileWriter.write(cmdLine);
+				fileWriter.close();
+				Process process = Runtime.getRuntime().exec(new String[] {"cmd.exe", "/c", "START",  "/WAIT", "UDPIXXATDataStreamer.bat"});
+				running = true;
+				int exitCode = process.waitFor();
+				System.out.println("UDPIXXATDataStreamer exit code : " + exitCode);
+				running = false;
+			} catch (IOException | InterruptedException e) {
+				e.printStackTrace();
+				running = false;
+			}
 			
-			consoleStyledText.addTraverseListener(new TraverseListener() {
-				@Override
-				public void keyTraversed(TraverseEvent event) {
-					if(event.detail == SWT.TRAVERSE_RETURN) {
-						int lineNumber = consoleStyledText.getLineAtOffset(consoleStyledText.getCaretOffset());
-						System.out.println(lineNumber);
-						System.out.println(consoleStyledText.getLine(lineNumber));
-					}
-				}
-			});
-			
-			
-			UDPIXXATDataStreamer.main(cmdLine.split(" "));
-			running = true;
 		} else {
 			running = false;
 		}
@@ -350,7 +351,7 @@ public class UDPXIXXATWindow extends ApplicationWindow {
 	private void populateTimerTabItem(CTabItem tabItem) {
 		Composite container = new Composite(tabItem.getParent(), SWT.BORDER);
 		container.setLayout(new GridLayout(2, false));
-		Label label = new Label(container, SWT.BORDER);
+		Label label = new Label(container, SWT.NONE);
 		label.setText("Frequency (Hz) : ");
 		label.setLayoutData(new GridData(SWT.RIGHT, SWT.CENTER, false, false));
 		Combo combo = new Combo(container, SWT.READ_ONLY);
@@ -376,7 +377,7 @@ public class UDPXIXXATWindow extends ApplicationWindow {
 		Composite container = new Composite(tabItem.getParent(), SWT.BORDER);
 		container.setLayout(new GridLayout(2, false));
 		
-		Label label = new Label(container, SWT.BORDER);
+		Label label = new Label(container, SWT.NONE);
 		label.setText("Frequency (Hz) : ");
 		label.setLayoutData(new GridData(SWT.RIGHT, SWT.CENTER, false, false));
 		Combo combo = new Combo(container, SWT.READ_ONLY);
@@ -396,7 +397,7 @@ public class UDPXIXXATWindow extends ApplicationWindow {
 		});
 		
 		
-		Label labelSerial = new Label(container, SWT.BORDER);
+		Label labelSerial = new Label(container, SWT.NONE);
 		labelSerial.setText("XSens serial key : ");
 		labelSerial.setLayoutData(new GridData(SWT.RIGHT, SWT.CENTER, false, false));
 		Text textSerialKey = new Text(container, SWT.BORDER);
@@ -424,7 +425,7 @@ public class UDPXIXXATWindow extends ApplicationWindow {
 		useMulticastbutton.setEnabled(false);
 		useMulticastbutton.setLayoutData(new GridData(SWT.RIGHT, SWT.LEFT, true, false, 2, 1));
 		
-		Label nbUnlabeledMarkersLabel = new Label(container, SWT.BORDER);
+		Label nbUnlabeledMarkersLabel = new Label(container, SWT.NONE);
 		nbUnlabeledMarkersLabel.setText("Unlabeled markers number : ");
 		nbUnlabeledMarkersLabel.setLayoutData(new GridData(SWT.RIGHT, SWT.CENTER, false, false));
 		Spinner nbUnlabeledMarkersSpinner = new Spinner(container, SWT.READ_ONLY | SWT.BORDER);
@@ -440,7 +441,7 @@ public class UDPXIXXATWindow extends ApplicationWindow {
 			}
 		});
 		
-		Label firstMarkerIndexLabel = new Label(container, SWT.BORDER);
+		Label firstMarkerIndexLabel = new Label(container, SWT.NONE);
 		firstMarkerIndexLabel.setText("First marker index : ");
 		firstMarkerIndexLabel.setLayoutData(new GridData(SWT.RIGHT, SWT.CENTER, false, false));
 		Spinner firstMarkerIndexSpinner = new Spinner(container, SWT.READ_ONLY | SWT.BORDER);
@@ -456,7 +457,7 @@ public class UDPXIXXATWindow extends ApplicationWindow {
 			}
 		});
 		
-		Label udpClientIPLabel = new Label(container, SWT.BORDER);
+		Label udpClientIPLabel = new Label(container, SWT.NONE);
 		udpClientIPLabel.setText("UDP Client IP : ");
 		udpClientIPLabel.setLayoutData(new GridData(SWT.RIGHT, SWT.CENTER, false, false));
 		Text udpClientIPText = new Text(container, SWT.BORDER);
@@ -470,7 +471,7 @@ public class UDPXIXXATWindow extends ApplicationWindow {
 			}
 		});
 		
-		Label udpSourcePortLabel = new Label(container, SWT.BORDER);
+		Label udpSourcePortLabel = new Label(container, SWT.NONE);
 		udpSourcePortLabel.setText("UDP Source port : ");
 		udpSourcePortLabel.setLayoutData(new GridData(SWT.RIGHT, SWT.CENTER, false, false));
 		Text udpSourcePortText = new Text(container, SWT.BORDER);
@@ -484,7 +485,7 @@ public class UDPXIXXATWindow extends ApplicationWindow {
 			}
 		});
 		
-		Label multicastIPLabel = new Label(container, SWT.BORDER);
+		Label multicastIPLabel = new Label(container, SWT.NONE);
 		multicastIPLabel.setText("Multicast IP : ");
 		multicastIPLabel.setLayoutData(new GridData(SWT.RIGHT, SWT.CENTER, false, false));
 		Text multicastIPText = new Text(container, SWT.BORDER);
@@ -505,8 +506,8 @@ public class UDPXIXXATWindow extends ApplicationWindow {
 		Composite container = new Composite(tabItem.getParent(), SWT.BORDER);
 		container.setLayout(new GridLayout(2, false));
 		
-		Label codaServerIPLabel = new Label(container, SWT.BORDER);
-		codaServerIPLabel.setText("Multicast IP : ");
+		Label codaServerIPLabel = new Label(container, SWT.NONE);
+		codaServerIPLabel.setText("Coda server IP : ");
 		codaServerIPLabel.setLayoutData(new GridData(SWT.RIGHT, SWT.CENTER, false, false));
 		Text codaServerIP = new Text(container, SWT.BORDER);
 		codaServerIP.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false));
@@ -519,7 +520,7 @@ public class UDPXIXXATWindow extends ApplicationWindow {
 			}
 		});
 		
-		Label frameRateLabel = new Label(container, SWT.BORDER);
+		Label frameRateLabel = new Label(container, SWT.NONE);
 		frameRateLabel.setText("Frequency (Hz) : ");
 		frameRateLabel.setLayoutData(new GridData(SWT.RIGHT, SWT.CENTER, false, false));
 		Combo frameRateCombo = new Combo(container, SWT.READ_ONLY);
@@ -534,7 +535,7 @@ public class UDPXIXXATWindow extends ApplicationWindow {
 			}
 		});
 		
-		Label decimationLabel = new Label(container, SWT.BORDER);
+		Label decimationLabel = new Label(container, SWT.NONE);
 		decimationLabel.setText("Decimation : ");
 		decimationLabel.setLayoutData(new GridData(SWT.RIGHT, SWT.CENTER, false, false));
 		Spinner decimationSpinner = new Spinner(container, SWT.READ_ONLY | SWT.BORDER);
@@ -550,7 +551,7 @@ public class UDPXIXXATWindow extends ApplicationWindow {
 			}
 		});
 		
-		Label codaNBMarkersLabel = new Label(container, SWT.BORDER);
+		Label codaNBMarkersLabel = new Label(container, SWT.NONE);
 		codaNBMarkersLabel.setText("Markers number : ");
 		codaNBMarkersLabel.setLayoutData(new GridData(SWT.RIGHT, SWT.CENTER, false, false));
 		Spinner codaNBMarkersSpinner = new Spinner(container, SWT.READ_ONLY | SWT.BORDER);
@@ -566,7 +567,7 @@ public class UDPXIXXATWindow extends ApplicationWindow {
 			}
 		});
 		
-		Label codaFirstMarkerIndexLabel = new Label(container, SWT.BORDER);
+		Label codaFirstMarkerIndexLabel = new Label(container, SWT.NONE);
 		codaFirstMarkerIndexLabel.setText("First marker index : ");
 		codaFirstMarkerIndexLabel.setLayoutData(new GridData(SWT.RIGHT, SWT.CENTER, false, false));
 		Spinner firstMarkerIndexSpinner = new Spinner(container, SWT.READ_ONLY | SWT.BORDER);
@@ -582,7 +583,7 @@ public class UDPXIXXATWindow extends ApplicationWindow {
 			}
 		});
 		
-		Label frameNumberLabel = new Label(container, SWT.BORDER);
+		Label frameNumberLabel = new Label(container, SWT.NONE);
 		frameNumberLabel.setText("Frame number : ");
 		frameNumberLabel.setLayoutData(new GridData(SWT.RIGHT, SWT.CENTER, false, false));
 		Text frameNumberText = new Text(container, SWT.BORDER);
@@ -657,11 +658,19 @@ public class UDPXIXXATWindow extends ApplicationWindow {
 	 */
 	public static void main(String args[]) {
 		try {
-			UDPXIXXATWindow window = new UDPXIXXATWindow();
-			window.setBlockOnOpen(true);
-			window.open();
-			StreamingProperties.saveProperties();
-			Display.getCurrent().dispose();
+			
+			for (int i = 0; i < args.length; i++) if(args[i].equalsIgnoreCase(StreamingProperties.useGUIToken)) 
+				StreamingProperties.useGUI = Boolean.parseBoolean(args[i+1]);
+			
+			if(!StreamingProperties.useGUI) {
+				UDPIXXATDataStreamer.main(args);
+			} else {
+				UDPXIXXATWindow window = new UDPXIXXATWindow();			
+				window.setBlockOnOpen(true);
+				window.open();
+				StreamingProperties.saveProperties();
+				Display.getCurrent().dispose();
+			}
 			
 		} catch (Exception e) {
 			e.printStackTrace();

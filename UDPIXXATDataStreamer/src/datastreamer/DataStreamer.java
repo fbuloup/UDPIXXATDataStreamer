@@ -72,14 +72,15 @@ public class DataStreamer extends Thread {
 //	private final static int CODA_ACQ_SAVE_BUFFER_ONLY = 2;
 	private final static int CODA_ACQ_SAVE_NONE = 3;
 	
-	private final static String codaServerIPToken = "-codaserverip";
-	private final static String frameRateToken = "-framerate";
-	private final static String decimationToken = "-decimation";
-	private final static String nbMarkersToken = "-nbmarkers";
-	private final static String firstMarkerIndexToken = "-firstmarkerindex";
-	private final static String framesNumberToken = "-framesnumber";
-	private final static String autoGrabToken = "-autograb";
-	private final static String simulModeToken = "-simulmode";
+	public final static String codaServerIPToken = "-codaserverip";
+	public final static String frameRateToken = "-framerate";
+	public final static String decimationToken = "-decimation";
+	public final static String nbMarkersToken = "-nbmarkers";
+	public final static String firstMarkerIndexToken = "-firstmarkerindex";
+	public final static String framesNumberToken = "-framesnumber";
+	public final static String autoGrabToken = "-autograb";
+	public final static String simulModeToken = "-simulmode";
+	public final static String doAlignmentToken = "-doalignment";
 	
 	private final static CODANETClient codaUnit = new CODANETClient();
 	private final static Mode codaUnitMode = new Mode();
@@ -118,8 +119,8 @@ public class DataStreamer extends Thread {
 	/*
 	 * XSens
 	 */
-	private final static String xsensSerialkeyToken = "-xsensserialkey";
-	private final static String xsensSampleFrequencyToken = "-xsenssamplefrequency";
+	public final static String xsensSerialkeyToken = "-xsensserialkey";
+	public final static String xsensSampleFrequencyToken = "-xsenssamplefrequency";
 	
 	private static String xsensSerialKey = "NE3B-79EA-K6RP-WDNH-QA2Y";
 	private static int xsensSampleFrequency = XSensLibrary.MAX_FREQUENCY;
@@ -137,7 +138,7 @@ public class DataStreamer extends Thread {
 	/*
 	 * Time stamp
 	 */
-	private final static String timeStampSampleFrequencyToken = "-timestampsamplefrequency";
+	public final static String timeStampSampleFrequencyToken = "-timestampsamplefrequency";
 
 	private static int timeStampSampleFrequency;
 	
@@ -155,21 +156,21 @@ public class DataStreamer extends Thread {
 	
 	private final static int NAT_FRAMEOFDATA = 7;
 	
-	private final static String useMulticastToken = "-usemulticast";
-	private final static String optitrackNbUnlabeledMarkersToken = "-optitracknbunlabeledmarkers";
-	private final static String optitrackUDPServerIPToken = "-optitrackudpclientip";
-	private final static String optitrackUDPDataPortToken = "-optitrackudpdataport";
-	private final static String optitrackUDPCommandPortToken = "-optitrackudpcommandport";
-	private final static String optitrackfirstMarkerIndexToken = "-optitrackfirstmarkerindex";
-	private final static String multicastIPToken = "multicastip";
+	public final static String useMulticastToken = "-usemulticast";
+	public final static String optitrackNbUnlabeledMarkersToken = "-optitracknbunlabeledmarkers";
+	public final static String optitrackUDPServerIPToken = "-optitrackudpclientip";
+	public final static String optitrackUDPDataPortToken = "-optitrackudpdataport";
+	public final static String optitrackUDPCommandPortToken = "-optitrackudpcommandport";
+	public final static String optitrackfirstMarkerIndexToken = "-optitrackfirstmarkerindex";
+	public final static String optitrackMulticastIPToken = "optitrackmulticastip";
 	
-	private static boolean useMulticast = true;
+	private static boolean optitrackUseMulticast = true;
 	private static int optitrackNbUnlabeledMarkers = 0;
 	private static String optitrackUDPServerIP = "localhost";
 	private static int optitrackUDPDataPort = 1511;	
 	private static int optitrackUDPCommandPort = 1510;	
 	private static int optitrackFirstMarkerIndex = 0;
-	private static String multicastIP = "239.255.42.99";
+	private static String optitrackMulticastIP = "239.255.42.99";
 	
 	
 	private static byte optitrackSystemCode = 0;
@@ -254,7 +255,6 @@ public class DataStreamer extends Thread {
 	 * <li>-optitrackudpclientip : default localhost</li>
 	 * <li>-optitrackudpsourceport : default 1511</li>
 	 * <li>-multicastip : default 239.255.42.99</li>
-	 * multicastIPToken
 	 * </ul>
 	 * For instance :
 	 * -useoptitrack true -usemulticast true -optitracknbunlabeledmarkers 3 -optitrackfirstmarkerindex 4
@@ -272,8 +272,8 @@ public class DataStreamer extends Thread {
 			codaUnitMode.setMaxMarker(1);
 			
 			for (int i = 0; i < params.length; i++) {
-				if(params[i].toLowerCase().equals(codaServerIPToken)) codaServerIP = params[i+1];
-				if(params[i].toLowerCase().equals(frameRateToken)) {
+				if(params[i].toLowerCase().equalsIgnoreCase(codaServerIPToken)) codaServerIP = params[i+1];
+				if(params[i].toLowerCase().equalsIgnoreCase(frameRateToken)) {
 					frameRate = Integer.parseInt(params[i+1]);
 					switch (frameRate) {
 					case 100:
@@ -297,15 +297,15 @@ public class DataStreamer extends Thread {
 						break;
 					}
 				}
-				if(params[i].toLowerCase().equals(decimationToken)) codaUnitMode.setDecimation(Integer.parseInt(params[i+1]));
-				if(params[i].toLowerCase().equals(nbMarkersToken)) {
+				if(params[i].toLowerCase().equalsIgnoreCase(decimationToken)) codaUnitMode.setDecimation(Integer.parseInt(params[i+1]));
+				if(params[i].toLowerCase().equalsIgnoreCase(nbMarkersToken)) {
 					codaUnitMode.setMaxMarker(Integer.parseInt(params[i+1]));
 					nbMarkers = codaUnitMode.getMaxMarker();
 				}
-				if(params[i].toLowerCase().equals(firstMarkerIndexToken)) firstMarkerIndex = Integer.parseInt(params[i+1]);
-				if(params[i].toLowerCase().equals(framesNumberToken)) framesNumber = Integer.parseInt(params[i+1]);
-				if(params[i].toLowerCase().equals(autoGrabToken)) autoGrab = Boolean.parseBoolean(params[i+1]);
-				if(params[i].toLowerCase().equals(simulModeToken)) simulMode = Boolean.parseBoolean(params[i+1]);
+				if(params[i].toLowerCase().equalsIgnoreCase(firstMarkerIndexToken)) firstMarkerIndex = Integer.parseInt(params[i+1]);
+				if(params[i].toLowerCase().equalsIgnoreCase(framesNumberToken)) framesNumber = Integer.parseInt(params[i+1]);
+				if(params[i].toLowerCase().equalsIgnoreCase(autoGrabToken)) autoGrab = Boolean.parseBoolean(params[i+1]);
+				if(params[i].toLowerCase().equalsIgnoreCase(simulModeToken)) simulMode = Boolean.parseBoolean(params[i+1]);
 			}
 			
 			if(framesNumber != -1) {
@@ -346,8 +346,8 @@ public class DataStreamer extends Thread {
 		//Use Gyro
 		if(UDPIXXATDataStreamer.useXSens) {
 			for (int i = 0; i < params.length; i++) {
-				if(params[i].toLowerCase().equals(xsensSerialkeyToken)) xsensSerialKey = params[i+1];
-				if(params[i].toLowerCase().equals(xsensSampleFrequencyToken)) xsensSampleFrequency = Integer.parseInt(params[i+1]);
+				if(params[i].toLowerCase().equalsIgnoreCase(xsensSerialkeyToken)) xsensSerialKey = params[i+1];
+				if(params[i].toLowerCase().equalsIgnoreCase(xsensSampleFrequencyToken)) xsensSampleFrequency = Integer.parseInt(params[i+1]);
 			}
 			
 			System.setProperty("jna.library.path", "./libs/");
@@ -376,7 +376,7 @@ public class DataStreamer extends Thread {
 		//Use time stamp
 		if(UDPIXXATDataStreamer.useTimeStamp) {
 			for (int i = 0; i < params.length; i++) {
-				if(params[i].toLowerCase().equals(timeStampSampleFrequencyToken)) timeStampSampleFrequency = Integer.parseInt(params[i+1]);
+				if(params[i].toLowerCase().equalsIgnoreCase(timeStampSampleFrequencyToken)) timeStampSampleFrequency = Integer.parseInt(params[i+1]);
 			}
 			if(timeStampSampleFrequency == 0) timeStampSampleFrequency = 1;
 			System.out.println("Use time stamp with frequency : " + timeStampSampleFrequency);
@@ -385,13 +385,13 @@ public class DataStreamer extends Thread {
 		// Use Optitrack {		
 		if(UDPIXXATDataStreamer.useOptitrack) {
 			for (int i = 0; i < params.length; i++) {
-				if(params[i].toLowerCase().equals(useMulticastToken)) useMulticast = Boolean.parseBoolean(params[i+1]);
-				if(params[i].toLowerCase().equals(optitrackNbUnlabeledMarkersToken)) optitrackNbUnlabeledMarkers = Integer.parseInt(params[i+1]);
-				if(params[i].toLowerCase().equals(optitrackUDPServerIPToken)) optitrackUDPServerIP = params[i+1];
-				if(params[i].toLowerCase().equals(optitrackUDPDataPortToken)) optitrackUDPDataPort = Integer.parseInt(params[i+1]);
-				if(params[i].toLowerCase().equals(optitrackUDPCommandPortToken)) optitrackUDPCommandPort = Integer.parseInt(params[i+1]);
-				if(params[i].toLowerCase().equals(optitrackfirstMarkerIndexToken)) optitrackFirstMarkerIndex = Integer.parseInt(params[i+1]);
-				if(params[i].toLowerCase().equals(multicastIPToken)) multicastIP = params[i+1];
+				if(params[i].toLowerCase().equalsIgnoreCase(useMulticastToken)) optitrackUseMulticast = Boolean.parseBoolean(params[i+1]);
+				if(params[i].toLowerCase().equalsIgnoreCase(optitrackNbUnlabeledMarkersToken)) optitrackNbUnlabeledMarkers = Integer.parseInt(params[i+1]);
+				if(params[i].toLowerCase().equalsIgnoreCase(optitrackUDPServerIPToken)) optitrackUDPServerIP = params[i+1];
+				if(params[i].toLowerCase().equalsIgnoreCase(optitrackUDPDataPortToken)) optitrackUDPDataPort = Integer.parseInt(params[i+1]);
+				if(params[i].toLowerCase().equalsIgnoreCase(optitrackUDPCommandPortToken)) optitrackUDPCommandPort = Integer.parseInt(params[i+1]);
+				if(params[i].toLowerCase().equalsIgnoreCase(optitrackfirstMarkerIndexToken)) optitrackFirstMarkerIndex = Integer.parseInt(params[i+1]);
+				if(params[i].toLowerCase().equalsIgnoreCase(optitrackMulticastIPToken)) optitrackMulticastIP = params[i+1];
 			}
 			optitrackBytesBuffer = new byte[8*optitrackNbUnlabeledMarkers];
 		}
@@ -442,7 +442,7 @@ public class DataStreamer extends Thread {
 			
 			if(UDPIXXATDataStreamer.useXSens) xSens.gotoMeasurement();
 			
-			if(UDPIXXATDataStreamer.useOptitrack && useMulticast) {
+			if(UDPIXXATDataStreamer.useOptitrack && optitrackUseMulticast) {
 //				optitrackDataThread.start();
 //				optitrackCommandThread.start();
 				// data
@@ -457,8 +457,8 @@ public class DataStreamer extends Thread {
 	            optitrackDgSocketCommand.setReuseAddress(true);
 	            optitrackDgSocketCommand.setSoTimeout(2000);
 	            optitrackDgSocketCommand.joinGroup(new InetSocketAddress(group, optitrackUDPCommandPort), networkInterface);
-				System.out.println("Using optitrack on multicast : " + useMulticast);
-				if(useMulticast) System.out.println("Multicast IP : " + multicastIP);
+				System.out.println("Using optitrack on multicast : " + optitrackUseMulticast);
+				if(optitrackUseMulticast) System.out.println("Multicast IP : " + optitrackMulticastIP);
 				System.out.println("Nb unlabeled markers to find : " + optitrackNbUnlabeledMarkers);
 				System.out.println("Optitrack First Marker Index : " + optitrackFirstMarkerIndex);
 				optitrackReceiveBytesBuffer = new byte[128*1024];
