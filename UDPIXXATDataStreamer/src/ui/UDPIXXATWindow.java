@@ -3,9 +3,13 @@ package ui;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.lang.reflect.InvocationTargetException;
 
+import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.jface.action.StatusLineManager;
 import org.eclipse.jface.dialogs.MessageDialog;
+import org.eclipse.jface.dialogs.ProgressMonitorDialog;
+import org.eclipse.jface.operation.IRunnableWithProgress;
 import org.eclipse.jface.window.ApplicationWindow;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.graphics.Point;
@@ -344,36 +348,42 @@ public class UDPIXXATWindow extends ApplicationWindow {
 					fileWriter.write(cmdLine);
 					fileWriter.close();
 					
-					Process process = null;
-					if(System.getProperty("os.name").toLowerCase().contains("windows"))
-						process = Runtime.getRuntime().exec(new String[] {"cmd.exe", "/c", "START",  "/WAIT", "UDPIXXATDataStreamer.bat"});
-					if(System.getProperty("os.name").toLowerCase().contains("mac")) {
-						process = Runtime.getRuntime().exec(new String[] {"chmod", "777", "UDPIXXATDataStreamer.sh"});
-						process.waitFor();
-						process = Runtime.getRuntime().exec(
-							    new String[] {
-							        "osascript",
-							        "-e", "tell application \"Terminal\"",
-							        "-e", "do script \"/bin/bash -c \\\"cd " + System.getProperty("user.dir") + "; ./UDPIXXATDataStreamer.sh; \\\"\"",
-							        "-e", "end tell"
-							    }
-							);
-						
-//						process = Runtime.getRuntime().exec(new String[] {"open", "-a", "Terminal", "./UDPIXXATDataStreamer.sh"});
-					}
-					running = true;
-					int exitCode = process.waitFor();
-					while(process.isAlive());
-					System.out.println("UDPIXXATDataStreamer exit code : " + exitCode);
-					running = false;
+					IRunnableWithProgress runnableWithProgress = new IRunnableWithProgress() {
+						@Override
+						public void run(IProgressMonitor monitor) throws InvocationTargetException, InterruptedException {
+							try {
+								monitor.beginTask("Streaming thread is running...", IProgressMonitor.UNKNOWN);
+								Process process = null;
+								if(System.getProperty("os.name").toLowerCase().contains("windows"))
+									process = Runtime.getRuntime().exec(new String[] {"cmd.exe", "/c", "START",  "/WAIT", "UDPIXXATDataStreamer.bat"});
+								if(System.getProperty("os.name").toLowerCase().contains("mac")) {
+									process = Runtime.getRuntime().exec(new String[] {"chmod", "777", "UDPIXXATDataStreamer.sh"});
+									process.waitFor();
+									process = Runtime.getRuntime().exec(
+										    new String[] {
+										        "osascript",
+										        "-e", "tell application \"Terminal\"",
+										        "-e", "do script \"/bin/bash -c \\\"cd " + System.getProperty("user.dir") + "; ./UDPIXXATDataStreamer.sh; \\\"\"",
+										        "-e", "end tell"
+										    }
+										);
+								}
+								running = true;
+								int exitCode = process.waitFor();
+								while(process.isAlive());
+								System.out.println("UDPIXXATDataStreamer exit code : " + exitCode);
+								running = false;
+							} catch (IOException | InterruptedException e) {
+								e.printStackTrace();
+							}
+						}
+					};
+					run(true, false, runnableWithProgress);			
 				}
-				
-				
-			} catch (IOException | InterruptedException e) {
+			} catch (InvocationTargetException | InterruptedException | IOException e) {
 				e.printStackTrace();
 				running = false;
 			}
-			
 		} else {
 			running = false;
 		}
@@ -629,8 +639,12 @@ public class UDPIXXATWindow extends ApplicationWindow {
 			}
 		});
 		
-		Button autoGrabButton = new Button(container, SWT.CHECK);
-		autoGrabButton.setLayoutData(new GridData(SWT.CENTER, SWT.FILL, true, false, 2, 1));
+		Composite buttonsContainer = new Composite(container, SWT.NORMAL);
+		buttonsContainer.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, false, 2, 1));
+		buttonsContainer.setLayout(new GridLayout(3, true));
+		
+		Button autoGrabButton = new Button(buttonsContainer, SWT.CHECK);
+		autoGrabButton.setLayoutData(new GridData(SWT.CENTER, SWT.FILL, true, false, 1, 1));
 		autoGrabButton.setText("Auto Grab");
 		autoGrabButton.setSelection(StreamingProperties.codaAutoGrab);
 		autoGrabButton.addSelectionListener(new SelectionAdapter() {
@@ -641,8 +655,8 @@ public class UDPIXXATWindow extends ApplicationWindow {
 			}
 		});
 		
-		Button doAlignmentButton = new Button(container, SWT.CHECK);
-		doAlignmentButton.setLayoutData(new GridData(SWT.CENTER, SWT.FILL, true, false, 2, 1));
+		Button doAlignmentButton = new Button(buttonsContainer, SWT.CHECK);
+		doAlignmentButton.setLayoutData(new GridData(SWT.CENTER, SWT.FILL, true, false, 1, 1));
 		doAlignmentButton.setText("Do alignment");
 		doAlignmentButton.setSelection(StreamingProperties.codaDoAlignment);
 		doAlignmentButton.addSelectionListener(new SelectionAdapter() {
@@ -653,9 +667,9 @@ public class UDPIXXATWindow extends ApplicationWindow {
 			}
 		});
 		
-		Button simulModeButton = new Button(container, SWT.CHECK);
-		simulModeButton.setLayoutData(new GridData(SWT.CENTER, SWT.FILL, true, false, 2, 1));
-		simulModeButton.setText("Auto Grab");
+		Button simulModeButton = new Button(buttonsContainer, SWT.CHECK);
+		simulModeButton.setLayoutData(new GridData(SWT.CENTER, SWT.FILL, true, false, 1, 1));
+		simulModeButton.setText("Simul Mode");
 		simulModeButton.setSelection(StreamingProperties.codaSimulMode);
 		simulModeButton.addSelectionListener(new SelectionAdapter() {
 			@Override

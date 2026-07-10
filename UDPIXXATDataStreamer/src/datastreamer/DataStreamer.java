@@ -468,6 +468,9 @@ public class DataStreamer extends Thread {
 			
 			t = System.nanoTime();
 			
+
+			
+			
 			while( ((n < framesNumber) || (framesNumber == -1)) && !isInterrupted()) {
 				if(!pause) {
 					

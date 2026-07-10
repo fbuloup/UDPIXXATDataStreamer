@@ -224,6 +224,7 @@ public class UDPIXXATDataStreamer implements DataObserver {
 			System.out.println("Or Press 'D' + ENTER to toggle markers values display...");
 			bufferedReader.readLine();
 			dataStreamer.start();
+			System.out.println("Data streamer started...");
 			boolean stop = false;
 			while(!stop) {
 				String value = bufferedReader.readLine();
