@@ -162,7 +162,7 @@ public class DataStreamer extends Thread {
 	public final static String optitrackUDPDataPortToken = "-optitrackudpdataport";
 	public final static String optitrackUDPCommandPortToken = "-optitrackudpcommandport";
 	public final static String optitrackfirstMarkerIndexToken = "-optitrackfirstmarkerindex";
-	public final static String optitrackMulticastIPToken = "optitrackmulticastip";
+	public final static String optitrackMulticastIPToken = "-optitrackmulticastip";
 	
 	private static boolean optitrackUseMulticast = true;
 	private static int optitrackNbUnlabeledMarkers = 0;
@@ -475,6 +475,11 @@ public class DataStreamer extends Thread {
 				if(!pause) {
 					
 					if((System.currentTimeMillis() - lastTimeStampDisplay > 2000) && display) doDisplay = true;
+					
+					if(doDisplay) {
+						new ProcessBuilder("cmd", "/c", "cls").inheritIO().start().waitFor();
+					}
+					
 					
 					if(UDPIXXATDataStreamer.useCodamotion) {
 						
