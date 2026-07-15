@@ -183,7 +183,7 @@ public class UDPIXXATWindow extends ApplicationWindow {
 		gridLayout.marginWidth = 10;
 		grpStreamingType.setLayout(gridLayout);
 		udpButton = new Button(grpStreamingType, SWT.RADIO);
-		udpButton.setLayoutData(new GridData(SWT.FILL, SWT.TOP, true, false, 1, 1));
+		udpButton.setLayoutData(new GridData(SWT.LEFT, SWT.TOP, true, false, 1, 1));
 		udpButton.setText("UDP\n(configure UDP options)");
 		udpButton.setSelection(StreamingProperties.useUDP);
 		udpButton.addSelectionListener(new SelectionAdapter() {
@@ -193,7 +193,7 @@ public class UDPIXXATWindow extends ApplicationWindow {
 			}
 		});
 		ixxatButton = new Button(grpStreamingType, SWT.RADIO);
-		ixxatButton.setLayoutData(new GridData(SWT.FILL, SWT.TOP, true, false, 1, 1));
+		ixxatButton.setLayoutData(new GridData(SWT.RIGHT, SWT.TOP, true, false, 1, 1));
 		ixxatButton.setText("IXXAT");
 		ixxatButton.setSelection(StreamingProperties.useIXXAT);
 		ixxatButton.addSelectionListener(new SelectionAdapter() {
@@ -487,7 +487,7 @@ public class UDPIXXATWindow extends ApplicationWindow {
 		firstMarkerIndexLabel.setLayoutData(new GridData(SWT.RIGHT, SWT.CENTER, false, false));
 		Spinner firstMarkerIndexSpinner = new Spinner(container, SWT.READ_ONLY | SWT.BORDER);
 		firstMarkerIndexSpinner.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false));
-		firstMarkerIndexSpinner.setMinimum(1);
+		firstMarkerIndexSpinner.setMinimum(0);
 		firstMarkerIndexSpinner.setMaximum(10);
 		firstMarkerIndexSpinner.setSelection(StreamingProperties.otFirstMarkerIndex);
 		firstMarkerIndexSpinner.addModifyListener(new ModifyListener() {

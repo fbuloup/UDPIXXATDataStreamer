@@ -1,2 +1,2 @@
-java -jar UDPIXXATDataStreamer.jar -useGUI true -ixxatstreamer false -udpclientip localhost -udpsourceport 15000 -udpdestinationport 15000 -usecoda false -usexsens false -usetimestamp true -timestampsamplefrequency 1 -useoptitrack false
+java -jar UDPIXXATDataStreamer.jar -useGUI true -ixxatstreamer false -udpclientip localhost -udpsourceport 15000 -udpdestinationport 15000 -usecoda false -usexsens false -usetimestamp true -timestampsamplefrequency 1 -useoptitrack true -usemulticast true -optitracknbunlabeledmarkers 2 -optitrackfirstmarkerindex 0 optitrackmulticastip 239.255.42.99 -optitrackudpclientip localhost -optitrackudpdataport 1511 optitrackmulticastip 239.255.42.99
 exit

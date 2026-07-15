@@ -49,7 +49,7 @@ public final class StreamingProperties {
 	protected static String selectedTabItem = "";
 	protected static String selectedTabItemKey = "selectedTabItem";
 	
-	protected static String streamingOptions = "STREAMIN_OPTIONS";
+	protected static String streamingOptions = "STREAMING_OPTIONS";
 	protected static String udpOptions = "UDP_OPTIONS";
 	protected static String codamotionSystem = "CODAMOTION";
 	protected static String optitrackSystem = "OPTITRACK";
@@ -127,7 +127,7 @@ public final class StreamingProperties {
 		useXSens = Boolean.parseBoolean(properties.getProperty(useXSensKey, "false"));
 		useTimer = Boolean.parseBoolean(properties.getProperty(useTimerKey, "false"));
 		
-		selectedTabItem = properties.getProperty(selectedTabItemKey, codamotionSystem);
+		selectedTabItem = properties.getProperty(selectedTabItemKey, streamingOptions);
 		
 		udpClientIP = properties.getProperty(udpClientIPKey, "localhost");
 		udpSourcePort = properties.getProperty(udpSourcePortKey, "15000");
