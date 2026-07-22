@@ -86,6 +86,7 @@ public class UDPIXXATDataStreamer implements DataObserver {
 	 * <li>-autograb : default true. Use or not autograd frame. Do not use autograb with simulmode</li>
 	 * <li>-simulmode : default false. Use or not simulation mode (CodaServerSimulate).</li>
 	 * <li>-doalignment : default true. Do you want to do an alignment ?</li>
+	 * <li>-displaymarkersinvisibility : default false. Do you want to display markers invisibility ?</li>
 	 * </ul>
 	 * For instance :
 	 * -codaServerIP 192.168.0.3 -frameRate 800 -decimation 1 -nbMarkers 1 -firstMarkerIndex 1 

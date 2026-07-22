@@ -107,6 +107,8 @@ public final class StreamingProperties {
 	protected static String codaDoAlignmentKey = DataStreamer.doAlignmentToken;
 	protected static boolean codaSimulMode;
 	protected static String codaSimulModeKey = DataStreamer.simulModeToken;
+	protected static boolean displayMarkersInvisibility;
+	protected static String displayMarkersInvisibilityKey = DataStreamer.displayMarkersInvisibilityToken;
 	
 	protected static void loadProperties() throws IOException {
 		
@@ -157,6 +159,7 @@ public final class StreamingProperties {
 		codaAutoGrab = Boolean.parseBoolean(properties.getProperty(codaAutoGrabKey, "true"));
 		codaDoAlignment = Boolean.parseBoolean(properties.getProperty(codaDoAlignmentKey, "false"));
 		codaSimulMode = Boolean.parseBoolean(properties.getProperty(codaSimulModeKey, "false"));
+		displayMarkersInvisibility = Boolean.parseBoolean(properties.getProperty(displayMarkersInvisibilityKey, "false"));
 		
 	}
 	
@@ -203,6 +206,8 @@ public final class StreamingProperties {
 //		properties.setProperty(codaUDPDestinationPortKey, codaUDPDestinationPort);
 		properties.setProperty(codaFrameNumberKey, codaFrameNumber);
 		properties.setProperty(codaAutoGrabKey, Boolean.toString(codaAutoGrab));
+		properties.setProperty(codaSimulModeKey, Boolean.toString(codaSimulMode));
+		properties.setProperty(displayMarkersInvisibilityKey, Boolean.toString(displayMarkersInvisibility));
 		
 		try {
 			FileOutputStream fileOutputStream = new FileOutputStream(propertiesFileName);

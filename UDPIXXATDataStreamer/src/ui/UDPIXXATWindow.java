@@ -302,6 +302,7 @@ public class UDPIXXATWindow extends ApplicationWindow {
 				cmdLine = cmdLine + " " + StreamingProperties.codaAutoGrabKey + " " + StreamingProperties.codaAutoGrab;
 				cmdLine = cmdLine + " " + StreamingProperties.codaSimulModeKey + " " + StreamingProperties.codaSimulMode;
 				cmdLine = cmdLine + " " + StreamingProperties.codaDoAlignmentKey + " " + StreamingProperties.codaDoAlignment;
+				cmdLine = cmdLine + " " + StreamingProperties.displayMarkersInvisibilityKey + " " + StreamingProperties.displayMarkersInvisibility;
 			}
 			
 			cmdLine = cmdLine + " " + StreamingProperties.useXSensKey + " " + StreamingProperties.useXSens;
@@ -640,7 +641,7 @@ public class UDPIXXATWindow extends ApplicationWindow {
 		
 		Composite buttonsContainer = new Composite(container, SWT.NORMAL);
 		buttonsContainer.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, false, 2, 1));
-		buttonsContainer.setLayout(new GridLayout(3, true));
+		buttonsContainer.setLayout(new GridLayout(4, true));
 		
 		Button autoGrabButton = new Button(buttonsContainer, SWT.CHECK);
 		autoGrabButton.setLayoutData(new GridData(SWT.CENTER, SWT.FILL, true, false, 1, 1));
@@ -674,6 +675,18 @@ public class UDPIXXATWindow extends ApplicationWindow {
 			@Override
 			public void widgetSelected(SelectionEvent e) {
 				StreamingProperties.codaSimulMode = simulModeButton.getSelection();
+				StreamingProperties.saveProperties();
+			}
+		});
+		
+		Button displayMarkersInvisibilityButton = new Button(buttonsContainer, SWT.CHECK);
+		displayMarkersInvisibilityButton.setLayoutData(new GridData(SWT.CENTER, SWT.FILL, true, false, 1, 1));
+		displayMarkersInvisibilityButton.setText("Log markers invisibility");
+		displayMarkersInvisibilityButton.setSelection(StreamingProperties.displayMarkersInvisibility);
+		displayMarkersInvisibilityButton.addSelectionListener(new SelectionAdapter() {
+			@Override
+			public void widgetSelected(SelectionEvent e) {
+				StreamingProperties.displayMarkersInvisibility = displayMarkersInvisibilityButton.getSelection();
 				StreamingProperties.saveProperties();
 			}
 		});

@@ -81,6 +81,7 @@ public class DataStreamer extends Thread {
 	public final static String autoGrabToken = "-autograb";
 	public final static String simulModeToken = "-simulmode";
 	public final static String doAlignmentToken = "-doalignment";
+	public final static String displayMarkersInvisibilityToken = "-displaymarkersinvisibility";
 	
 	private final static CODANETClient codaUnit = new CODANETClient();
 	private final static Mode codaUnitMode = new Mode();
@@ -115,6 +116,8 @@ public class DataStreamer extends Thread {
 	private static byte codaSystemCode = 0;
 	
 	private static boolean simulMode = false;
+	private static boolean displayMarkersInvisibility = false;
+	
 	
 	/*
 	 * XSens
@@ -306,6 +309,7 @@ public class DataStreamer extends Thread {
 				if(params[i].toLowerCase().equalsIgnoreCase(framesNumberToken)) framesNumber = Integer.parseInt(params[i+1]);
 				if(params[i].toLowerCase().equalsIgnoreCase(autoGrabToken)) autoGrab = Boolean.parseBoolean(params[i+1]);
 				if(params[i].toLowerCase().equalsIgnoreCase(simulModeToken)) simulMode = Boolean.parseBoolean(params[i+1]);
+				if(params[i].toLowerCase().equalsIgnoreCase(displayMarkersInvisibilityToken)) displayMarkersInvisibility = Boolean.parseBoolean(params[i+1]);
 			}
 			
 			if(framesNumber != -1) {
@@ -511,7 +515,7 @@ public class DataStreamer extends Thread {
 								yValue = (short) (10*codaValues[3*j + 1]);
 								zValue = (short) (10*codaValues[3*j + 2]);
 								
-								if(codaVisibilities[j] == 0) {
+								if(codaVisibilities[j] == 0 && displayMarkersInvisibility) {
 									System.out.println("Marker " + (j + 1) + " invisible at frame ID " + frameID);
 								}
 								
